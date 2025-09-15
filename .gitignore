@@ -1,0 +1,11 @@
+# IDE directories and files
+.vscode/
+
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files and directories
+logs/

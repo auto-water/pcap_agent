@@ -78,7 +78,7 @@ def check_libraries(show_info: bool = True):
             print("  pip install pcapy-ng # 可能有兼容性问题")
 
 # 默认检查库（显示信息）
-check_libraries(True)
+# check_libraries(True)
 
 from utils import (
     Constants, setup_logger, validate_ip_address, validate_port,
@@ -238,15 +238,6 @@ class PortScanDetector:
         # 记录扫描尝试
         dst_ip = packet.dst_ip
         self.scan_attempts[src_ip][dst_ip].add(packet.dst_port)
-        
-        # 清理过期记录
-        for src in list(self.scan_attempts.keys()):
-            for dst in list(self.scan_attempts[src].keys()):
-                # 这里可以添加时间戳检查逻辑
-                if len(self.scan_attempts[src][dst]) == 0:
-                    del self.scan_attempts[src][dst]
-            if not self.scan_attempts[src]:
-                del self.scan_attempts[src]
         
         # 检查是否超过阈值
         for dst_ip, ports in self.scan_attempts[src_ip].items():
@@ -438,165 +429,6 @@ class PCAPAnalyzer:
             self.logger.debug(f"Scapy解析数据包失败: {e}")
             return None
     
-    def start_capture(self, interface: str = None, filter_str: str = None) -> bool:
-        """
-        开始实时抓包
-        
-        Args:
-            interface: 网络接口名称
-            filter_str: 抓包过滤器
-            
-        Returns:
-            是否成功启动抓包
-        """
-        # 优先使用 pcapkit，然后是 pcapy，最后是 pypcap
-        if PCAPKIT_AVAILABLE:
-            return self._start_capture_pcapkit(interface, filter_str)
-        elif PCAPY_AVAILABLE:
-            return self._start_capture_pcapy(interface, filter_str)
-        elif PYPCAP_AVAILABLE:
-            return self._start_capture_pypcap(interface, filter_str)
-        else:
-            self.logger.error("没有可用的PCAP库，无法进行实时抓包")
-            self.logger.error("请安装以下库之一:")
-            self.logger.error("  pip install pcapkit  # 推荐")
-            self.logger.error("  pip install pypcap   # 需要先安装 WinPcap/Npcap")
-            return False
-    
-    def _start_capture_pcapkit(self, interface: str = None, filter_str: str = None) -> bool:
-        """使用 pcapkit 进行抓包"""
-        try:
-            import pcapkit
-            
-            # pcapkit 使用不同的接口
-            self.capture = pcapkit.extract(fin=interface or '', 
-                                         fout=None, 
-                                         format='pcap', 
-                                         store=False, 
-                                         verbose=True)
-            
-            self.is_capturing = True
-            self.capture_thread = threading.Thread(target=self._capture_loop_pcapkit)
-            self.capture_thread.daemon = True
-            self.capture_thread.start()
-            
-            self.logger.info(f"使用 pcapkit 开始捕获网络流量，接口: {interface or 'default'}")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"使用 pcapkit 启动抓包失败: {e}")
-            return False
-    
-    def _start_capture_pcapy(self, interface: str = None, filter_str: str = None) -> bool:
-        """使用 pcapy 进行抓包"""
-        try:
-            if interface is None:
-                # 获取默认网络接口
-                interfaces = pcapy.findalldevs()
-                if not interfaces:
-                    self.logger.error("未找到可用的网络接口")
-                    return False
-                interface = interfaces[0]
-                self.logger.info(f"使用默认网络接口: {interface}")
-            
-            # 创建抓包器
-            self.capture = pcapy.open_live(interface, 65536, True, 1000)
-            
-            if filter_str:
-                self.capture.setfilter(filter_str)
-                self.logger.info(f"设置过滤器: {filter_str}")
-            
-            self.is_capturing = True
-            self.capture_thread = threading.Thread(target=self._capture_loop_pcapy)
-            self.capture_thread.daemon = True
-            self.capture_thread.start()
-            
-            self.logger.info(f"使用 pcapy 开始捕获网络流量，接口: {interface}")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"使用 pcapy 启动抓包失败: {e}")
-            return False
-    
-    def _start_capture_pypcap(self, interface: str = None, filter_str: str = None) -> bool:
-        """使用 pypcap 进行抓包"""
-        try:
-            import pcap
-            
-            # 创建抓包器
-            self.capture = pcap.pcap(name=interface, promisc=True, immediate=True)
-            
-            if filter_str:
-                self.capture.setfilter(filter_str)
-                self.logger.info(f"设置过滤器: {filter_str}")
-            
-            self.is_capturing = True
-            self.capture_thread = threading.Thread(target=self._capture_loop_pypcap)
-            self.capture_thread.daemon = True
-            self.capture_thread.start()
-            
-            self.logger.info(f"使用 pypcap 开始捕获网络流量，接口: {interface or 'default'}")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"使用 pypcap 启动抓包失败: {e}")
-            return False
-    
-    def _capture_loop(self):
-        """通用抓包循环（向后兼容）"""
-        if PCAPY_AVAILABLE:
-            self._capture_loop_pcapy()
-        elif PCAPKIT_AVAILABLE:
-            self._capture_loop_pcapkit()
-        elif PYPCAP_AVAILABLE:
-            self._capture_loop_pypcap()
-    
-    def _capture_loop_pcapy(self):
-        """pcapy 抓包循环"""
-        try:
-            while self.is_capturing:
-                (header, data) = self.capture.next()
-                if header and data:
-                    packet_info = self.parse_packet_pcapy(header, data)
-                    if packet_info:
-                        self.traffic_analyzer.add_packet(packet_info)
-        except Exception as e:
-            self.logger.error(f"pcapy 抓包过程中发生错误: {e}")
-    
-    def _capture_loop_pcapkit(self):
-        """pcapkit 抓包循环"""
-        try:
-            # pcapkit 的处理方式不同
-            for packet in self.capture:
-                if not self.is_capturing:
-                    break
-                packet_info = self.parse_packet_scapy(packet)
-                if packet_info:
-                    self.traffic_analyzer.add_packet(packet_info)
-        except Exception as e:
-            self.logger.error(f"pcapkit 抓包过程中发生错误: {e}")
-    
-    def _capture_loop_pypcap(self):
-        """pypcap 抓包循环"""
-        try:
-            while self.is_capturing:
-                (timestamp, data) = self.capture.next()
-                if data:
-                    # 使用 scapy 解析 pypcap 的数据
-                    packet = Ether(data)
-                    packet_info = self.parse_packet_scapy(packet)
-                    if packet_info:
-                        self.traffic_analyzer.add_packet(packet_info)
-        except Exception as e:
-            self.logger.error(f"pypcap 抓包过程中发生错误: {e}")
-    
-    def stop_capture(self):
-        """停止抓包"""
-        self.is_capturing = False
-        if self.capture_thread and self.capture_thread.is_alive():
-            self.capture_thread.join(timeout=5)
-        self.logger.info("已停止网络流量捕获")
-    
     def analyze_pcap_file(self, file_path: str) -> List[PacketInfo]:
         """分析PCAP文件"""
         if not self.silent_mode:
@@ -634,58 +466,7 @@ class PCAPAnalyzer:
                         
             except Exception as e:
                 self.logger.error(f"使用 scapy 读取文件失败: {e}")
-        
-        if PCAPKIT_AVAILABLE:
-            # 使用 pcapkit 读取文件
-            try:
-                import pcapkit
-                
-                self.logger.info("尝试使用 pcapkit 读取文件")
-                pcapkit_packets = pcapkit.extract(file_path, store=True)
-                
-                packet_count = 0
-                for packet in pcapkit_packets:
-                    packet_info = self.parse_packet_scapy(packet)
-                    if packet_info:
-                        packets.append(packet_info)
-                        self.traffic_analyzer.add_packet(packet_info, is_file_analysis=True)
-                    
-                    packet_count += 1
-                    if packet_count % 1000 == 0:
-                        self.logger.info(f"已处理 {packet_count} 个数据包")
-                
-                self.logger.info(f"使用 pcapkit 处理了 {packet_count} 个数据包")
-                return packets
-                
-            except Exception as e:
-                self.logger.error(f"使用 pcapkit 读取文件失败: {e}")
-        
-        if PCAPY_AVAILABLE:
-            # 使用 pcapy 读取文件
-            try:
-                capture = pcapy.open_offline(file_path)
-                packet_count = 0
-                
-                while True:
-                    (header, data) = capture.next()
-                    if not header or not data:
-                        break
-                    
-                    packet_info = self.parse_packet_pcapy(header, data)
-                    if packet_info:
-                        packets.append(packet_info)
-                        self.traffic_analyzer.add_packet(packet_info, is_file_analysis=True)
-                    
-                    packet_count += 1
-                    if packet_count % 1000 == 0:
-                        self.logger.info(f"已处理 {packet_count} 个数据包")
-                
-                self.logger.info(f"使用 pcapy 处理了 {packet_count} 个数据包")
-                return packets
-                
-            except Exception as e:
-                self.logger.error(f"使用 pcapy 读取文件失败: {e}")
-        
+
         self.logger.error("没有可用的PCAP库来读取文件")
         return packets
     

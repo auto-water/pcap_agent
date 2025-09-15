@@ -242,7 +242,7 @@ def save_analysis_result(results: List[Dict[str, Any]], filename: Optional[str] 
     """
     if filename is None:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'netsec_analysis_{timestamp}.json'
+        filename = f'./logs/netsec_analysis_{timestamp}.json'
     
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)

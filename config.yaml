@@ -3,9 +3,9 @@
 
 # 硅基流动 AI 配置
 fluidai:
-  api_url: "https://api.siliconflow.cn/v1"
+  api_url: "https://api.siliconflow.cn/v1/chat/completions"
   api_key: "sk-dmeemizrhgzssbhgyhaadzftcqenudgagihfjkpsyhsjvqmz"  # 请替换为您的真实API密钥
-  model: "tencent/Hunyuan-A13B-Instruct"
+  model: "tencent/Hunyuan-MT-7B"
   timeout: 30
 
 # 分析配置

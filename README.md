@@ -91,40 +91,17 @@ pip install scapy
 # pip install pcapy-ng
 ```
 
-3. **验证安装**
-```bash
-python test_installation.py
-```
-
 ## 🚀 使用方法
 
 ### 基本用法
 
-#### 1. 分析PCAP文件
+#### 分析PCAP文件
 ```bash
-# 分析指定的PCAP文件
-python main.py -f capture.pcap
+# 正常输出
+python main.py -f capture.pcapng
 
-# 分析文件并保存结果
-python main.py -f capture.pcap -o result.json
-
-# 使用真实AI API分析
-python main.py -f capture.pcap --real-ai
-```
-
-#### 2. 实时网络抓包
-```bash
-# 实时抓包分析（按Ctrl+C停止）
-python main.py -r
-
-# 抓包30秒后自动停止
-python main.py -r -d 30
-
-# 指定网络接口抓包
-python main.py -r -i eth0
-
-# 设置抓包过滤器
-python main.py -r --filter "tcp port 80"
+# 精简输出(带进度条)
+python main.py -f capture.pcapng --simple
 ```
 
 ### 高级选项
@@ -134,41 +111,11 @@ python main.py -r --filter "tcp port 80"
 | 参数 | 说明 | 示例 |
 |------|------|------|
 | `-f, --file` | 分析指定的PCAP文件 | `python main.py -f capture.pcap` |
-| `-r, --realtime` | 进行实时网络抓包 | `python main.py -r` |
-| `-i, --interface` | 指定网络接口 | `python main.py -r -i eth0` |
-| `-d, --duration` | 抓包持续时间（秒） | `python main.py -r -d 60` |
-| `--filter` | 设置抓包过滤器 | `python main.py -r --filter "tcp port 80"` |
 | `-o, --output` | 保存分析结果 | `python main.py -f file.pcap -o result.json` |
-| `--no-ai` | 禁用AI分析 | `python main.py -f file.pcap --no-ai` |
-| `--real-ai` | 使用真实FluidAI API | `python main.py -f file.pcap --real-ai` |
 | `-v, --verbose` | 详细输出模式 | `python main.py -f file.pcap -v` |
 | `-q, --quiet` | 静默模式 | `python main.py -f file.pcap -q` |
 
-### 配置文件
 
-创建 `config.yaml` 文件进行高级配置：
-
-```yaml
-# FluidAI 配置
-fluidai:
-  api_url: "https://api.fluidai.com/v1/chat/completions"
-  api_key: "your_api_key_here"
-  model: "fluidai-pro"
-  timeout: 30
-
-# 分析配置
-analysis:
-  enable_realtime: true
-  packet_limit: 10000
-  time_window: 60
-  enable_ai_analysis: true
-
-# 日志配置
-logging:
-  level: "INFO"
-  file_enabled: true
-  console_enabled: true
-```
 
 ## 📊 输出示例
 
@@ -238,72 +185,6 @@ pcap_agent/
 3. **统计分析**: 基于流量统计特征的异常检测
 4. **实时监控**: 持续监控和实时告警
 
-## 🔍 故障排除
-
-### 常见问题
-
-#### 1. pcapy-ng 安装失败（Windows）
-**问题**: `AttributeError: module 'distutils.sysconfig' has no attribute '_init_posix'`
-
-**解决方案**:
-```bash
-# 使用自动安装脚本（推荐）
-python install_dependencies.py
-
-# 或者手动安装替代库
-pip install scapy  # 基础功能
-pip install pcapkit  # 如果可用
-```
-
-#### 2. 权限不足
-```bash
-# Windows: 以管理员身份运行
-# Linux/macOS: 使用sudo
-sudo python main.py -r
-```
-
-#### 3. 网络接口不可用
-```bash
-# 查看可用网络接口（如果安装了pcapy）
-python -c "import pcapy; print(pcapy.findalldevs())"
-
-# 或者使用系统命令
-# Windows: ipconfig
-# Linux: ip addr show
-# macOS: ifconfig
-```
-
-#### 4. 依赖库安装失败
-```bash
-# 安装系统依赖（Ubuntu/Debian）
-sudo apt-get install libpcap-dev
-
-# 安装系统依赖（CentOS/RHEL）
-sudo yum install libpcap-devel
-
-# Windows: 安装 WinPcap 或 Npcap
-# 下载地址: https://npcap.com/download/
-```
-
-#### 5. API连接失败
-```bash
-# 检查网络连接
-ping api.fluidai.com
-
-# 验证API密钥
-python -c "from fluidai_client import FluidAIClient; client = FluidAIClient('your_key'); print(client.test_connection())"
-
-# 使用模拟客户端
-python main.py -f file.pcap --no-ai
-```
-
-#### 6. 配置文件问题
-```bash
-# 如果配置文件加载失败，程序会使用默认配置
-# 可以手动创建 config.yaml 文件
-cp config.yaml.example config.yaml
-```
-
 ### 调试模式
 
 启用详细日志输出：
@@ -311,18 +192,6 @@ cp config.yaml.example config.yaml
 python main.py -f capture.pcap -v
 ```
 
-查看日志文件：
-```bash
-tail -f netsec_analyzer_20240115.log
-```
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
 
 ## 📄 许可证
 
