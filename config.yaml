@@ -1,0 +1,59 @@
+# NetSecAnalyzer 配置文件
+# 请根据您的需求修改以下配置
+
+# 硅基流动 AI 配置
+fluidai:
+  api_url: "https://api.siliconflow.cn/v1"
+  api_key: "sk-dmeemizrhgzssbhgyhaadzftcqenudgagihfjkpsyhsjvqmz"  # 请替换为您的真实API密钥
+  model: "tencent/Hunyuan-A13B-Instruct"
+  timeout: 30
+
+# 分析配置
+analysis:
+  enable_realtime: true          # 启用实时分析
+  packet_limit: 10000           # 最大处理数据包数量
+  time_window: 60               # 分析时间窗口（秒）
+  enable_ai_analysis: true      # 启用AI分析
+  
+  # 攻击检测阈值
+  thresholds:
+    port_scan_threshold: 10     # 端口扫描检测阈值
+    address_scan_threshold: 50  # 地址扫描检测阈值
+    flood_threshold: 100        # 泛洪攻击检测阈值
+    min_packet_size: 64         # 最小数据包大小
+    max_packet_size: 1500       # 最大数据包大小
+
+# 日志配置
+logging:
+  level: "INFO"                 # 日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file_enabled: true            # 启用文件日志
+  console_enabled: true         # 启用控制台日志
+  log_file: "netsec_analyzer.log"  # 日志文件名
+
+# 网络抓包配置
+capture:
+  default_interface: null       # 默认网络接口（null为自动选择）
+  buffer_size: 65536           # 抓包缓冲区大小
+  promiscuous: true            # 混杂模式
+  timeout: 1000                # 抓包超时时间（毫秒）
+  
+  # 常用过滤器示例
+  filters:
+    tcp_only: "tcp"            # 仅抓取TCP包
+    http_only: "tcp port 80"   # 仅抓取HTTP流量
+    dns_only: "udp port 53"    # 仅抓取DNS流量
+    custom: ""                 # 自定义过滤器
+
+# 输出配置
+output:
+  save_results: true           # 自动保存分析结果
+  output_format: "json"        # 输出格式: json, yaml, txt
+  include_raw_packets: false   # 是否包含原始数据包数据
+  max_file_size: 100           # 最大输出文件大小（MB）
+
+# 性能配置
+performance:
+  max_threads: 4               # 最大线程数
+  memory_limit: 512            # 内存使用限制（MB）
+  enable_caching: true         # 启用缓存
+  cache_size: 1000             # 缓存大小

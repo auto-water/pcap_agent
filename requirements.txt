@@ -1,0 +1,32 @@
+# 网络抓包和分析相关依赖
+# pcapy-ng==1.0.5  # 在 Windows 上可能有兼容性问题，使用 pcapkit 替代
+pcapkit==1.0.2
+scapy==2.5.0
+
+# 备选 PCAP 库（如果上述库不可用）
+# 注意：在 Windows 上可能需要安装 WinPcap 或 Npcap
+# pip install pypcap  # 需要先安装 WinPcap/Npcap
+
+# HTTP 请求和 JSON 处理
+requests==2.31.0
+urllib3==2.1.0
+
+# 数据处理和分析
+pandas==2.1.4
+numpy==1.24.3
+
+# 日志和配置
+colorlog==6.8.0
+pyyaml==6.0.1
+
+# 命令行参数解析
+argparse
+
+# 时间处理
+python-dateutil==2.8.2
+
+# 网络地址处理
+ipaddress
+
+# 其他工具
+tqdm==4.66.1
