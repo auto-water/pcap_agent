@@ -55,6 +55,7 @@ class FluidAIClient:
             'messages': messages,
             'temperature': 0.1,  # 降低随机性,提高一致性
             'max_tokens': 2000,
+            'response_format': {"type": "json_object"}
         }
         
         try:
@@ -128,10 +129,10 @@ class FluidAIClient:
         if response and 'choices' in response:
             content = response['choices'][0]['message']['content']
             # 移除代码块的标记
-            json_match = re.search(r'```json(.*?)```', content, re.DOTALL).group(1)
-            # json_match.replace(r'：', r'":')
-            json_match = re.sub(r'[\u4e00-\u9fa5]', '":', json_match)
-            analysis_result = fix_and_parse_json(json_match)
+            # json_match = re.search(r'```json(.*?)```', content, re.DOTALL)
+            # json_match = content.group(1)
+            analysis_result = fix_and_parse_json(content)
+            # analysis_result = json.loads(content)
             return self._process_analysis_result(analysis_result, traffic_data)
     
     def _build_analysis_prompt(self, traffic_data: Dict[str, Any]) -> str:
@@ -309,8 +310,9 @@ class FluidAIClient:
         if response and 'choices' in response:
             try:
                 content = response['choices'][0]['message']['content']
-                json_match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
-                patterns = json.loads(json_match.group(1))
+                # json_match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
+                # patterns = json.loads(json_match.group(1))
+                patterns = json.loads(content)
                 # 确保返回的是列表
                 if isinstance(patterns, dict):
                     patterns = [patterns]
