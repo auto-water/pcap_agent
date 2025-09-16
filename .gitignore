@@ -9,3 +9,7 @@ __pycache__/
 
 # Log files and directories
 logs/
+*.log
+
+# debug files
+debug/
