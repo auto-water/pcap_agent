@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 NetSecAnalyzer - 硅基流动大模型接口客户端
-负责与硅基流动 AI 接口交互，进行智能网络攻击检测和分析
+负责与硅基流动 AI 接口交互,进行智能网络攻击检测和分析
 """
 
 import json
@@ -12,7 +12,7 @@ import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from utils import setup_logger, Constants, create_attack_report
+from utils import setup_logger, fix_and_parse_json
 
 
 class FluidAIClient:
@@ -53,7 +53,7 @@ class FluidAIClient:
         payload = {
             'model': self.model,
             'messages': messages,
-            'temperature': 0.1,  # 降低随机性，提高一致性
+            'temperature': 0.1,  # 降低随机性,提高一致性
             'max_tokens': 2000,
         }
         
@@ -94,25 +94,26 @@ class FluidAIClient:
         messages = [
             {
                 "role": "system",
-                "content": """你是一个专业的网络安全分析专家，擅长识别各种网络攻击模式。
-                请仔细分析提供的网络流量数据，识别潜在的网络安全威胁。
-                你需要识别以下类型的攻击：
-                1. 端口扫描 (Port Scanning)
-                2. 地址扫描 (Address Scanning) 
-                3. 泛洪攻击 (Flooding Attacks)
-                4. SYN泛洪 (SYN Flood)
-                5. UDP泛洪 (UDP Flood)
-                6. ICMP泛洪 (ICMP Flood)
-                7. 异常流量模式
-                8. 其他可疑行为
-                
-                请以JSON格式返回分析结果，包含：
-                - attack_type: 攻击类型
-                - confidence: 置信度 (0-100)
-                - description: 攻击描述
-                - evidence: 证据说明
-                - recommendations: 防护建议
-                - severity: 严重程度 (LOW/MEDIUM/HIGH/CRITICAL)
+                "content": """You are a professional cybersecurity analysis expert, skilled at identifying various network attack patterns.
+                    Please carefully analyze the provided network traffic data and identify potential cybersecurity threats.
+
+                    You need to identify the following types of attacks:
+                    1. Port Scanning
+                    2. Address Scanning
+                    3. Flooding Attacks
+                    4. SYN Flood
+                    5. UDP Flood
+                    6. ICMP Flood
+                    7. Anomalous Traffic Patterns
+                    8. Other Suspicious Activities
+
+                    Please return the analysis results in JSON format, strictly ensuring the correctness of the JSON syntax. The JSON should include:
+                    - attack_type: The type of attack
+                    - confidence: The confidence level (0-100)
+                    - description: A description of the attack
+                    - evidence: An explanation of the evidence
+                    - recommendations: Recommended defenses
+                    - severity: The severity level (LOW/MEDIUM/HIGH/CRITICAL)
                 """
             },
             {
@@ -127,22 +128,11 @@ class FluidAIClient:
         if response and 'choices' in response:
             content = response['choices'][0]['message']['content']
             # 移除代码块的标记
-            json_str = content.replace('```json\n', '').replace('```', '')
-            json_str = json_str.replace('：', '":')  # 修正中文冒号
-            #
-            #
-            # llm返回的json错误千奇百怪，目前的想法是一直循环直到没错
-            #
-            #
-            try:
-                analysis_result = json.loads(json_str)
-                return self._process_analysis_result(analysis_result, traffic_data)
-            except json.JSONDecodeError as e:
-                print(e.msg)
-                # 如果JSON解析失败，返回文本分析结果
-                return self._process_text_analysis(response['choices'][0]['message']['content'], traffic_data)
-        
-        return self._get_default_analysis_result()
+            json_match = re.search(r'```json(.*?)```', content, re.DOTALL).group(1)
+            # json_match.replace(r'：', r'":')
+            json_match = re.sub(r'[\u4e00-\u9fa5]', '":', json_match)
+            analysis_result = fix_and_parse_json(json_match)
+            return self._process_analysis_result(analysis_result, traffic_data)
     
     def _build_analysis_prompt(self, traffic_data: Dict[str, Any]) -> str:
         """
@@ -155,7 +145,7 @@ class FluidAIClient:
             格式化的提示词
         """
         prompt = f"""
-            请分析以下网络流量数据，识别潜在的安全威胁：
+            请分析以下网络流量数据,识别潜在的安全威胁:
 
             ## 流量统计信息
             - 总数据包数: {traffic_data.get('total_packets', 0)}
@@ -187,7 +177,7 @@ class FluidAIClient:
         
         # 添加异常检测提示
         prompt += "\n## 异常检测提示\n"
-        prompt += "请特别关注以下异常模式：\n"
+        prompt += "请特别关注以下异常模式:\n"
         prompt += "1. 单一IP对多个端口的大量连接尝试（端口扫描）\n"
         prompt += "2. 单一IP对多个目标IP的连接尝试（地址扫描）\n"
         prompt += "3. 短时间内大量相同类型的数据包（泛洪攻击）\n"
@@ -219,17 +209,7 @@ class FluidAIClient:
         }
         
         # 合并AI分析结果
-        result['attacks'] = analysis_result
-        
-        # 添加默认值
-        # result.setdefault('attack_type', 'NORMAL_TRAFFIC')
-        # result.setdefault('confidence', 50)
-        # result.setdefault('description', '网络流量正常，未检测到明显攻击')
-        # result.setdefault('evidence', '流量模式符合正常网络行为')
-        # result.setdefault('recommendations', ['继续监控网络流量', '定期更新安全策略'])
-        # result.setdefault('severity', 'LOW')
-        
-        
+        result['attacks'] = analysis_result 
         return result
     
     def _process_text_analysis(self, text_content: str, traffic_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -273,7 +253,7 @@ class FluidAIClient:
             'model_used': 'N/A',
             'attack_type': 'UNKNOWN',
             'confidence': 0,
-            'description': 'AI分析服务不可用，请检查网络连接和API配置',
+            'description': 'AI分析服务不可用,请检查网络连接和API配置',
             'evidence': '无法连接到FluidAI服务',
             'recommendations': ['检查API密钥配置', '验证网络连接', '联系技术支持'],
             'severity': 'LOW',
@@ -299,18 +279,18 @@ class FluidAIClient:
         messages = [
             {
                 "role": "system",
-                "content": """你是一个专业的网络安全分析专家，专门分析数据包级别的攻击模式。
-                请分析提供的数据包序列，识别可能的攻击行为。
+                "content": """你是一个专业的网络安全分析专家,专门分析数据包级别的攻击模式。
+                请分析提供的数据包序列,识别可能的攻击行为。
                 
-                重点关注以下攻击模式：
-                1. 端口扫描：短时间内对多个端口进行连接尝试
-                2. 地址扫描：短时间内对多个IP地址进行连接尝试
-                3. SYN泛洪：大量SYN包，无对应ACK包
-                4. UDP泛洪：大量UDP包到同一目标
-                5. ICMP泛洪：大量ICMP包
-                6. 异常连接模式：非正常的连接序列
+                重点关注以下攻击模式:
+                1. 端口扫描:短时间内对多个端口进行连接尝试
+                2. 地址扫描:短时间内对多个IP地址进行连接尝试
+                3. SYN泛洪:大量SYN包,无对应ACK包
+                4. UDP泛洪:大量UDP包到同一目标
+                5. ICMP泛洪:大量ICMP包
+                6. 异常连接模式:非正常的连接序列
                 
-                请返回JSON格式的分析结果数组，每个攻击模式包含：
+                请返回JSON格式的分析结果数组,每个攻击模式包含:
                 - pattern_type: 攻击模式类型
                 - confidence: 置信度
                 - affected_ips: 受影响的IP地址
@@ -352,9 +332,9 @@ class FluidAIClient:
         Returns:
             格式化的提示词
         """
-        prompt = f"请分析以下 {len(packets)} 个数据包，识别攻击模式：\n\n"
+        prompt = f"请分析以下 {len(packets)} 个数据包,识别攻击模式:\n\n"
         
-        # 只显示前50个数据包，避免提示词过长
+        # 只显示前50个数据包,避免提示词过长
         sample_packets = packets[:50]
         
         for i, packet in enumerate(sample_packets):
@@ -368,7 +348,7 @@ class FluidAIClient:
         if len(packets) > 50:
             prompt += f"... 还有 {len(packets) - 50} 个数据包\n\n"
         
-        prompt += "请分析这些数据包序列，识别可能的攻击模式。"
+        prompt += "请分析这些数据包序列,识别可能的攻击模式。"
         
         return prompt
     
@@ -395,3 +375,43 @@ class FluidAIClient:
         else:
             self.logger.error("FluidAI API连接测试失败")
             return False
+
+if __name__ == "__main__":
+    # 模拟网络流量数据
+    traffic_data = {
+        "total_packets": 1000,
+        "time_window": 60,
+        "timestamp": datetime.now().isoformat(),
+        "protocols": {
+            "TCP": 700,
+            "UDP": 300
+        },
+        "top_sources": {
+            "192.168.1.1": 200,
+            "192.168.1.2": 150
+        },
+        "top_destinations": {
+            "10.0.0.1": 300,
+            "10.0.0.2": 250
+        },
+        "avg_packet_size": 500,
+        "min_packet_size": 64,
+        "max_packet_size": 1500
+    }
+
+    # 从 config.yaml 中读取配置
+    import yaml
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    
+    # 初始化 FluidAIClient
+    client = FluidAIClient(
+        api_key=config["fluidai"]["api_key"],
+        api_url=config["fluidai"]["api_url"],
+        model=config["fluidai"]["model"],
+        timeout=config["fluidai"]["timeout"]
+    )
+
+    # 调用 analyze_network_traffic
+    result = client.analyze_network_traffic(traffic_data)
+    print("分析结果:", result)

@@ -323,6 +323,38 @@ def print_banner():
     """
     print(banner)
 
+def fix_and_parse_json(json_string):
+    """
+    尝试解析一个JSON字符串，如果遇到“Expecting ':'”错误，
+    则在指定位置插入冒号并再次尝试解析。
+
+    Args:
+        json_string (str): 待解析的JSON字符串。
+
+    Returns:
+        dict/list: 解析成功的Python对象。
+
+    Raises:
+        json.JSONDecodeError: 如果错误无法自动修复或不是预期的类型，则抛出。
+    """
+    while True:
+        try:
+            # 尝试直接解析
+            return json.loads(json_string)
+        except json.JSONDecodeError as e:
+            # 检查错误信息是否为“Expecting ':'”
+            if "Expecting ':'" in str(e):
+                # 从错误对象中获取发生错误的位置 (pos)
+                pos = e.pos-1
+                print(f"检测到 'Expecting ':' 错误，位置为 {pos}。正在尝试修复...")
+                
+                # 在错误位置插入冒号
+                # 注意：这里假设插入冒号后字符串是有效的。
+                json_string= json_string[:pos-1] + '":' + json_string[pos:]
+                
+            else:
+                # 如果是其他类型的 JSON 错误，直接抛出
+                raise e
 
 if __name__ == "__main__":
     # 测试函数

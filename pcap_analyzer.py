@@ -29,56 +29,8 @@ except ImportError:
 PCAPY_AVAILABLE = False
 PCAPKIT_AVAILABLE = False
 PYPCAP_AVAILABLE = False
-_SHOW_LIB_INFO = True
 
-def check_libraries(show_info: bool = True):
-    """检查可用的库"""
-    global PCAPY_AVAILABLE, PCAPKIT_AVAILABLE, PYPCAP_AVAILABLE, SCAPY_AVAILABLE, _SHOW_LIB_INFO
-    _SHOW_LIB_INFO = show_info
-    
-    try:
-        import pcapy
-        PCAPY_AVAILABLE = True
-        if _SHOW_LIB_INFO:
-            print("✓ 检测到 pcapy 库")
-    except ImportError:
-        if _SHOW_LIB_INFO:
-            print("⚠ pcapy 库不可用")
 
-    try:
-        import pcapkit
-        PCAPKIT_AVAILABLE = True
-        if _SHOW_LIB_INFO:
-            print("✓ 检测到 pcapkit 库")
-    except ImportError:
-        if _SHOW_LIB_INFO:
-            print("⚠ pcapkit 库不可用，请运行 pip install pcapkit")
-
-    try:
-        import pcap
-        PYPCAP_AVAILABLE = True
-        if _SHOW_LIB_INFO:
-            print("✓ 检测到 pypcap 库")
-    except ImportError:
-        if _SHOW_LIB_INFO:
-            print("⚠ pypcap 库不可用")
-
-    if SCAPY_AVAILABLE and _SHOW_LIB_INFO:
-        print("✓ 检测到 scapy 库")
-    elif not SCAPY_AVAILABLE and _SHOW_LIB_INFO:
-        print("⚠ scapy 库未安装，请运行 pip install scapy")
-
-    # 检查是否有可用的PCAP库
-    if not any([PCAPY_AVAILABLE, PCAPKIT_AVAILABLE, PYPCAP_AVAILABLE]):
-        if _SHOW_LIB_INFO:
-            print("❌ 警告: 没有可用的PCAP库，实时抓包功能将不可用")
-            print("建议安装以下库之一:")
-            print("  pip install pcapkit  # 推荐，跨平台兼容性好")
-            print("  pip install pypcap   # 需要先安装 WinPcap/Npcap (Windows)")
-            print("  pip install pcapy-ng # 可能有兼容性问题")
-
-# 默认检查库（显示信息）
-# check_libraries(True)
 
 from utils import (
     Constants, setup_logger, validate_ip_address, validate_port,
