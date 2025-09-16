@@ -209,18 +209,14 @@ class NetSecAnalyzer:
         
         # AI分析结果
         ai_analysis = result.get('ai_analysis', {})
-        if ai_analysis and not ai_analysis.get('error'):
-            print(f"\nAI分析结果:")
-            print(f"  攻击类型: {ai_analysis.get('attack_type', 'N/A')}")
-            print(f"  置信度: {ai_analysis.get('confidence', 0)}%")
-            print(f"  严重程度: {ai_analysis.get('severity', 'N/A')}")
-            print(f"  描述: {ai_analysis.get('description', 'N/A')}")
-            
-            recommendations = ai_analysis.get('recommendations', [])
-            if recommendations:
-                print(f"  建议:")
-                for rec in recommendations[:3]:  # 显示前3个建议
-                    print(f"    - {rec}")
+        analysis_list = ai_analysis['attacks']
+        for attack in analysis_list:
+            print(f"\nAI检测到的攻击:")
+            print(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
+            print(f"  置信度: {attack.get('confidence', 0)}%")
+            print(f"  严重程度: {attack.get('severity', 'N/A')}")
+            print(f"  描述: {attack.get('description', 'N/A')}")
+            print(f"  建议: {attack.get('recommendations', [])}")
         
         # 攻击模式
         attack_patterns = result.get('attack_patterns', [])
