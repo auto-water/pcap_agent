@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件列表</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .file-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .file-name { font-weight: bold; color: #333; }
+        .file-date { color: #666; font-size: 14px; margin: 5px 0; }
+        .view-btn { background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-right: 10px; }
+        .view-btn:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; }
+        .delete-btn:hover { background: #c82333; }
+        .back-btn { background: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-bottom: 20px; display: inline-block; }
+        .btn-group { margin-top: 10px; }
+        
+        /* 气泡提示样式 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        
+        .toast.error {
+            background: #dc3545;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件列表</h1>
+        <a href="{% url 'upload_file' %}" class="back-btn">返回上传页面</a>
+        
+        {% if uploaded_files %}
+            {% for file in uploaded_files %}
+            <div class="file-item">
+                <div class="file-name">{{ file.filename }}</div>
+                <div class="file-date">上传时间: {{ file.uploaded_at|date:"Y-m-d H:i:s" }}</div>
+                <div class="btn-group">
+                    <a href="{% url 'file_detail' file.id %}" class="view-btn">查看内容</a>
+                    <a href="{% url 'delete_file' file.id %}" class="delete-btn" onclick="return confirm('确定要删除文件 {{ file.filename }} 吗？此操作不可撤销！')">删除</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>暂无上传的文件</p>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="toast {% if message.tags == 'error' %}error{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        
+        <script>
+            // 显示气泡提示并1秒后消失
+            document.addEventListener('DOMContentLoaded', function() {
+                const toasts = document.querySelectorAll('.toast');
+                toasts.forEach(function(toast) {
+                    // 立即显示
+                    setTimeout(function() {
+                        toast.classList.add('show');
+                    }, 100);
+                    
+                    // 1秒后隐藏
+                    setTimeout(function() {
+                        toast.classList.remove('show');
+                        // 动画结束后移除元素
+                        setTimeout(function() {
+                            toast.remove();
+                        }, 300);
+                    }, 1000);
+                });
+            });
+        </script>
+    {% endif %}
+</body>
+</html>

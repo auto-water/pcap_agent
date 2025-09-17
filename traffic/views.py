@@ -39,18 +39,45 @@ def upload_file(request):
             messages.error(request, f'文件处理失败: {str(e)}')
             return render(request, 'traffic/upload.html')
 
-    # 获取已上传的文件列表
+    return render(request, 'traffic/upload.html')
+
+
+def file_list(request):
+    """文件列表页面"""
     uploaded_files = UploadedFile.objects.all().order_by('-uploaded_at')
-    return render(request, 'traffic/upload.html', {'uploaded_files': uploaded_files})
+    return render(request, 'traffic/file_list.html', {'uploaded_files': uploaded_files})
 
 
-def view_file_content(request, file_id):
+def file_detail(request, file_id):
+    """文件详情页面"""
     try:
         file_record = UploadedFile.objects.get(id=file_id)
-        return JsonResponse({
-            'filename': file_record.filename,
-            'content': file_record.content,
-            'uploaded_at': file_record.uploaded_at.strftime('%Y-%m-%d %H:%M:%S')
-        })
+        return render(request, 'traffic/file_detail.html', {'file_record': file_record})
     except UploadedFile.DoesNotExist:
-        return JsonResponse({'error': '文件不存在'}, status=404)
+        messages.error(request, '文件不存在')
+        return redirect('file_list')
+
+
+def file_delete(request, file_id):
+    """删除文件"""
+    if request.method == 'POST':
+        try:
+            file_record = UploadedFile.objects.get(id=file_id)
+            file_record.delete()
+            messages.success(request, '文件删除成功')
+        except UploadedFile.DoesNotExist:
+            messages.error(request, '文件不存在')
+    return redirect('file_list')
+
+
+def delete_file(request, file_id):
+    """删除文件"""
+    try:
+        file_record = UploadedFile.objects.get(id=file_id)
+        filename = file_record.filename
+        file_record.delete()
+        messages.success(request, f'文件 {filename} 删除成功！')
+    except UploadedFile.DoesNotExist:
+        messages.error(request, '文件不存在')
+    
+    return redirect('file_list')

@@ -17,6 +17,9 @@
         button { padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; }
         button:hover { background: #005a8b; }
         input[type="file"] { margin: 10px 0; }
+        .navigation { margin: 20px 0; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007cba; color: white; text-align: center; border-radius: 3px; cursor: pointer; text-decoration: none; }
+        .btn:hover { background: #005a8b; }
     </style>
 </head>
 <body>
@@ -48,18 +51,9 @@
             </form>
         </div>
         
-        <!-- 已上传文件列表 -->
-        <div class="file-list">
-            <h2>已上传的文件</h2>
-            {% if uploaded_files %}
-                {% for file in uploaded_files %}
-                    <div class="file-item" onclick="viewContent({{ file.id }})">
-                        <strong>{{ file.filename }}</strong> - {{ file.uploaded_at|date:"Y-m-d H:i:s" }}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>暂无上传的文件</p>
-            {% endif %}
+        <!-- 导航链接 -->
+        <div class="navigation">
+            <a href="{% url 'file_list' %}" class="btn btn-secondary">查看文件列表</a>
         </div>
     </div>
     

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件详情 - {{ file_record.filename }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .file-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .content-box { border: 1px solid #ddd; padding: 20px; background: white; border-radius: 5px; }
+        .content { white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5; }
+        .back-btn { background: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-bottom: 20px; display: inline-block; margin-right: 10px; }
+        .back-btn:hover { background: #545b62; }
+        .delete-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-bottom: 20px; display: inline-block; }
+        .delete-btn:hover { background: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'file_list' %}" class="back-btn">返回文件列表</a>
+        <a href="{% url 'delete_file' file_record.id %}" class="delete-btn" onclick="return confirm('确定要删除文件 {{ file_record.filename }} 吗？此操作不可撤销！')">删除文件</a>
+        
+        <div class="file-info">
+            <h2>{{ file_record.filename }}</h2>
+            <p><strong>上传时间:</strong> {{ file_record.uploaded_at|date:"Y-m-d H:i:s" }}</p>
+        </div>
+        
+        <div class="content-box">
+            <h3>文件内容:</h3>
+            <div class="content">{{ file_record.content }}</div>
+        </div>
+    </div>
+</body>
+</html>
