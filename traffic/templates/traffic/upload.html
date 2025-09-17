@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCAP文件分析</title>
+    <title>智能流量分析系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -161,7 +161,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>PCAP文件分析</h1>
+        <h1>智能流量分析系统</h1>
         
         {% if messages %}
             {% for message in messages %}
@@ -172,7 +172,7 @@
         {% endif %}
         
         <div class="info">
-            <strong>💡 功能说明:</strong> 上传PCAP文件后，系统将自动分析网络包内容，统计协议类型、IP地址、端口信息等，并生成详细的分析报告。
+            <strong>💡 功能说明:</strong> 上传PCAP文件后，系统将自动分析网络包内容，统计协议类型、IP地址、端口信息等，并由大模型生成详细的安全分析报告。
         </div>
         
         <form method="post" enctype="multipart/form-data">

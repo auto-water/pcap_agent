@@ -8,7 +8,6 @@ NetSecAnalyzer - 主入口文件
 import os
 import sys
 import time
-import signal
 import argparse
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -46,9 +45,6 @@ class NetSecAnalyzer:
         self.pcap_analyzer = PCAPAnalyzer(self.config.get('analysis', {}), silent_mode=silent_mode)
         self.fluidai_client = None
         
-        # 设置信号处理
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
         
         self.is_running = False
         self.analysis_results = []
@@ -56,11 +52,6 @@ class NetSecAnalyzer:
         if not self.silent_mode:
             self.logger.info("NetSecAnalyzer 初始化完成")
     
-    def _signal_handler(self, signum, frame):
-        """信号处理器"""
-        self.logger.info(f"接收到信号 {signum}，正在安全退出...")
-        self.stop()
-        sys.exit(0)
     
     def _init_fluidai_client(self) -> bool:
         """
@@ -138,25 +129,20 @@ class NetSecAnalyzer:
         }
         
         # AI分析
-        if use_ai and self.config.get('analysis', {}).get('enable_ai_analysis', True):
-            if not self.fluidai_client:
-                self._init_fluidai_client(use_mock=True)
+        try:
+            # 分析流量统计
+            ai_result = self.fluidai_client.analyze_network_traffic(stats.get('statistics', {}))
+            result['ai_analysis'] = ai_result
             
-            if self.fluidai_client:
-                try:
-                    # 分析流量统计
-                    ai_result = self.fluidai_client.analyze_network_traffic(stats.get('statistics', {}))
-                    result['ai_analysis'] = ai_result
-                    
-                    # 分析数据包模式
-                    packet_dicts = [p.to_dict() for p in packets[:100]]  # 限制数量避免API限制
-                    attack_patterns = self.fluidai_client.detect_attack_patterns(packet_dicts)
-                    result['attack_patterns'] = attack_patterns
-                    
-                    self.logger.info("AI分析完成")
-                except Exception as e:
-                    self.logger.error(f"AI分析失败: {e}")
-                    result['ai_analysis'] = {'error': str(e)}
+            # 分析数据包模式
+            packet_dicts = [p.to_dict() for p in packets[:100]]
+            attack_patterns = self.fluidai_client.detect_attack_patterns(packet_dicts)
+            result['attack_patterns'] = attack_patterns
+            
+            self.logger.info("AI分析完成")
+        except Exception as e:
+            self.logger.error(f"AI分析失败: {e}")
+            result['ai_analysis'] = {'error': str(e)}
         
         # 保存结果
         if output_file:
@@ -165,171 +151,75 @@ class NetSecAnalyzer:
         
         return result
     
-    def print_analysis_summary(self, result: Dict[str, Any]):
+    def generate_analysis_summary(self, result: Dict[str, Any]) -> str:
         """
-        打印分析结果摘要
+        生成分析结果摘要字符串
         
         Args:
             result: 分析结果
-        """
-        print("\n" + "="*60)
-        print("网络流量分析结果摘要")
-        print("="*60)
         
+        Returns:
+            返回汇总后的字符串
+        """
+        summary = []
+        
+        # 添加标题
+        summary.append("\n" + "=" * 60)
+        summary.append("网络流量分析结果摘要")
+        summary.append("=" * 60)
+        
+        # 文件路径和抓包时间
         if 'file_path' in result:
-            print(f"分析文件: {result['file_path']}")
+            summary.append(f"分析文件: {result['file_path']}")
         
         if 'capture_time' in result:
-            print(f"抓包时间: {result['capture_time']}")
+            summary.append(f"抓包时间: {result['capture_time']}")
         
-        print(f"分析时间: {result.get('analysis_time', result.get('capture_time', 'N/A'))}")
+        summary.append(f"分析时间: {result.get('analysis_time', result.get('capture_time', 'N/A'))}")
         
+        # 流量统计
         stats = result.get('statistics', {})
         if stats:
-            print(f"\n流量统计:")
-            print(f"  总数据包数: {stats.get('total_packets', 0)}")
+            summary.append("\n流量统计:")
+            summary.append(f"  总数据包数: {stats.get('total_packets', 0)}")
             
             protocols = stats.get('protocols', {})
             if protocols:
-                print(f"  协议分布:")
+                summary.append("  协议分布:")
                 for protocol, count in list(protocols.items())[:5]:
-                    print(f"    {protocol}: {count} 个数据包")
+                    summary.append(f"    {protocol}: {count} 个数据包")
             
             if 'avg_packet_size' in stats:
-                print(f"  平均数据包大小: {stats['avg_packet_size']:.2f} 字节")
-            
-            # 攻击统计信息
-            attack_summary = stats.get('attack_summary', {})
-            if attack_summary and attack_summary.get('total_attacks', 0) > 0:
-                print(f"\n攻击检测统计:")
-                print(f"  总攻击事件: {attack_summary.get('total_attacks', 0)}")
-                print(f"  端口扫描: {attack_summary.get('port_scans', 0)}")
-                print(f"  地址扫描: {attack_summary.get('address_scans', 0)}")
-                print(f"  泛洪攻击: {attack_summary.get('flood_attacks', 0)}")
+                summary.append(f"  平均数据包大小: {stats['avg_packet_size']:.2f} 字节")
         
         # AI分析结果
         ai_analysis = result.get('ai_analysis', {})
-        analysis_list = ai_analysis['attacks']['attacks']
+        analysis_list = ai_analysis.get('attacks', {}).get('attacks', [])
+        summary.append("\n风暴型DoS检测结果:")
         for attack in analysis_list:
-            print(f"\nAI检测到的攻击:")
-            print(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
-            print(f"  置信度: {attack.get('confidence', 0)}%")
-            print(f"  严重程度: {attack.get('severity', 'N/A')}")
-            print(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
-            print(f"  建议: {attack.get('recommendations', [])}")
+            summary.append(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
+            summary.append(f"  置信度: {attack.get('confidence', 0)}%")
+            summary.append(f"  严重程度: {attack.get('severity', 'N/A')}")
+            summary.append(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
+            summary.append(f"  建议: {attack.get('recommendations', [])}")
         
         # 攻击模式
         attack_patterns = result.get('attack_patterns', [])
         if attack_patterns:
-            print(f"\n检测到的攻击模式:")
-            for pattern in attack_patterns[:3]:  # 显示前3个模式
-                print(f"  - {pattern.get('pattern_type', 'N/A')}: {pattern.get('description', 'N/A')}")
+            summary.append("\n剧毒型DoS检测结果:")
+            patterns = attack_patterns[0].get('attack_patterns', [])
+            for pattern in patterns:  
+                # summary.append(f"  - {pattern.get('pattern_type', 'N/A')}: {pattern.get('description', 'N/A')}")
+                summary.append(f"  攻击类型: {pattern.get('pattern_type', 'N/A')}")
+                summary.append(f"  置信度: {pattern.get('confidence', 0)}%")
+                summary.append(f"  严重程度: {pattern.get('severity', 'N/A')}")
+                summary.append(f"  描述: {pattern.get('description', pattern.get('description：', 'N/A'))}")
+                summary.append(f"  依据: {pattern.get('evidence', [])}")
+        # 添加结尾分隔符
+        summary.append("=" * 60)
         
-        print("="*60)
-
-
-def create_parser() -> argparse.ArgumentParser:
-    """创建命令行参数解析器"""
-    parser = argparse.ArgumentParser(
-        description='NetSecAnalyzer - 智能网络安全分析工具',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-示例用法:
-  # 分析PCAP文件
-  python main.py -f capture.pcap
-  
-  # 实时抓包分析（30秒）
-  python main.py -r -d 30
-  
-  # 实时抓包分析，指定网络接口
-  python main.py -r -i eth0
-  
-  # 分析PCAP文件并保存结果
-  python main.py -f capture.pcap -o result.json
-  
-  # 使用真实AI API（需要配置API密钥）
-  python main.py -f capture.pcap --real-ai
-        """
-    )
-    
-    # 主要操作模式
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-f', '--file', type=str, metavar='PCAP_FILE',
-                      help='分析指定的PCAP文件')
-    
-    # 输出选项
-    parser.add_argument('-o', '--output', type=str, metavar='OUTPUT_FILE',
-                       help='保存分析结果到指定文件')
-    # 配置选项
-    parser.add_argument('-c', '--config', type=str, metavar='CONFIG_FILE',
-                       help='指定配置文件路径')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='启用详细输出')
-    parser.add_argument('--quiet', '-q', action='store_true',
-                       help='静默模式，仅输出错误信息')
-    parser.add_argument('--simple', '-s', action='store_true',
-                       help='简洁模式，只显示进度条和最终结果')
-    
-    return parser
-
-
-def main():
-    """主函数"""
-    # 解析命令行参数
-    parser = create_parser()
-    args = parser.parse_args()
-    
-    # 设置日志级别和静默模式
-    if args.quiet:
-        log_level = 'ERROR'
-        silent_mode = True
-    elif args.simple:
-        log_level = 'WARNING'
-        silent_mode = True
-    elif args.verbose:
-        log_level = 'DEBUG'
-        silent_mode = False
-    else:
-        log_level = 'INFO'
-        silent_mode = False
-    
-    # 只在非静默模式下打印横幅
-    if not silent_mode:
-        print_banner()
-    
-    # 初始化分析器
-    analyzer = NetSecAnalyzer(args.config, silent_mode=silent_mode)
-    analyzer.logger.setLevel(log_level)
-    
-    try:
-        result = {}
-        
-        if args.file:
-            # 文件分析模式
-            analyzer._init_fluidai_client()
-            result = analyzer.analyze_pcap_file(
-                file_path=args.file,
-                output_file=args.output
-            )
-        # 打印结果摘要
-        if result:
-            analyzer.print_analysis_summary(result)
-            
-            # 保存结果（如果未指定输出文件）
-            if not args.output and result:
-                output_file = save_analysis_result([result])
-                print(f"\n分析结果已自动保存到: {output_file}")
-        
-        print("\n分析完成！")
-    
-    except KeyboardInterrupt:
-        print("\n用户中断操作")
-        analyzer.stop()
-    except Exception as e:
-        print(f"\n发生错误: {e}")
-        analyzer.logger.error(f"程序异常: {e}", exc_info=True)
-        sys.exit(1)
-
+        # 将列表拼接为字符串
+        return "\n".join(summary)
 
 if __name__ == "__main__":
     main()

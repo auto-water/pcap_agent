@@ -122,17 +122,14 @@ class FluidAIClient:
                 
             }
         ]
-        
-        response = self._make_request(messages)
-        
-        if response and 'choices' in response:
-            content = response['choices'][0]['message']['content']
-            # 移除代码块的标记
-            # json_match = re.search(r'```json(.*?)```', content, re.DOTALL)
-            # json_match = content.group(1)
-            analysis_result = fix_and_parse_json(content)
-            # analysis_result = json.loads(content)
-            return self._process_analysis_result(analysis_result, traffic_data)
+        analysis_result = None
+        while analysis_result is None:
+            response = self._make_request(messages)
+            if response and 'choices' in response:
+                content = response['choices'][0]['message']['content']
+                analysis_result = fix_and_parse_json(content)
+            
+        return self._process_analysis_result(analysis_result, traffic_data)
     
     def _build_analysis_prompt(self, traffic_data: Dict[str, Any]) -> str:
         """

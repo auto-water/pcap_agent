@@ -267,8 +267,10 @@ def load_config(config_file: str = None) -> Dict[str, Any]:
         import yaml
         with open(config_file, 'r', encoding='utf-8') as f:
             return yaml.safe_load(f)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        print(f"配置文件未找到: {e}")
         # 返回默认配置
+
         return {
             'fluidai': {
                 'api_url': 'https://api.fluidai.com/v1/chat/completions',
@@ -344,19 +346,19 @@ def fix_and_parse_json(json_string):
             return json.loads(json_string)
         except json.JSONDecodeError as e:
             # 检查错误信息是否为“Expecting ':'”
-            # if "Expecting ':'" in str(e):
+            if "Expecting ':'" in str(e):
             # 从错误对象中获取发生错误的位置 (pos)
-            pos = e.pos-1
-            print(f"检测到 'Expecting ':' 错误，位置为 {pos}。正在尝试修复...")
-            
-            # 在错误位置插入冒号
-            # 注意：这里假设插入冒号后字符串是有效的。
-            json_string= json_string[:pos-1] + '":' + json_string[pos:]
+                pos = e.pos-1
+                print(f"检测到 'Expecting ':' 错误，位置为 {pos}。正在尝试修复...")
                 
-            # else:
-            #     # 如果是其他类型的 JSON 错误，直接抛出
-            #     print(f"无法修复的 JSON 错误: {e}")
-            #     raise e
+                # 在错误位置插入冒号
+                # 注意：这里假设插入冒号后字符串是有效的。
+                json_string= json_string[:pos-1] + '":' + json_string[pos:]
+                
+            else:
+                # 如果是其他类型的 JSON 错误，直接抛出
+                print(f"无法修复的 JSON 错误: {e}\n重新询问ai")
+                return None
 
 if __name__ == "__main__":
     # 测试函数

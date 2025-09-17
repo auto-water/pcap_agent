@@ -78,63 +78,16 @@ class TrafficAnalyzer:
         self.time_window = time_window
         self.silent_mode = silent_mode
         self.packet_history = deque(maxlen=200000)  # 限制历史记录数量
-        self.port_scan_detector = PortScanDetector()
-        self.address_scan_detector = AddressScanDetector()
-        self.flood_detector = FloodDetector()
         self.logger = setup_logger('TrafficAnalyzer')
-        
-        # 攻击检测统计
-        self.attack_summary = {
-            'port_scans': 0,
-            'address_scans': 0,
-            'flood_attacks': 0,
-            'total_attacks': 0
-        }
         
     def add_packet(self, packet: PacketInfo, is_file_analysis: bool = False):
         """添加数据包进行分析"""
         current_time = time.time()
         
-        # 如果是文件分析，不清理过期数据（因为都是历史数据）
-        if not is_file_analysis:
-            # 清理过期数据（仅用于实时抓包）
-            while self.packet_history and self.packet_history[0].timestamp < current_time - self.time_window:
-                self.packet_history.popleft()
-        
         # 添加新数据包
         self.packet_history.append(packet)
-        
-        # 进行各种攻击检测
-        self._detect_attacks(packet)
+
     
-    def _detect_attacks(self, packet: PacketInfo):
-        """检测各种攻击模式"""
-        # 端口扫描检测
-        port_scan_result = self.port_scan_detector.check_packet(packet, self.packet_history)
-        if port_scan_result:
-            self.attack_summary['port_scans'] += 1
-            self.attack_summary['total_attacks'] += 1
-            # 静默模式下不输出详细日志
-            if not self.silent_mode and port_scan_result.get('packet_count', 0) > 50:
-                self.logger.warning(f"检测到端口扫描: {port_scan_result}")
-        
-        # 地址扫描检测
-        address_scan_result = self.address_scan_detector.check_packet(packet, self.packet_history)
-        if address_scan_result:
-            self.attack_summary['address_scans'] += 1
-            self.attack_summary['total_attacks'] += 1
-            # 静默模式下不输出详细日志
-            if not self.silent_mode and address_scan_result.get('packet_count', 0) > 100:
-                self.logger.warning(f"检测到地址扫描: {address_scan_result}")
-        
-        # 泛洪攻击检测
-        flood_result = self.flood_detector.check_packet(packet, self.packet_history)
-        if flood_result:
-            self.attack_summary['flood_attacks'] += 1
-            self.attack_summary['total_attacks'] += 1
-            # 静默模式下不输出详细日志
-            if not self.silent_mode and flood_result.get('packet_count', 0) > 1000:
-                self.logger.warning(f"检测到泛洪攻击: {flood_result}")
     
     def get_statistics(self) -> Dict[str, Any]:
         """获取流量统计信息"""
@@ -148,129 +101,23 @@ class TrafficAnalyzer:
             'top_destinations': defaultdict(int),
             'packet_sizes': []
         }
+
         
         for packet in self.packet_history:
             stats['protocols'][packet.protocol] += 1
             stats['top_sources'][packet.src_ip] += 1
             stats['top_destinations'][packet.dst_ip] += 1
             stats['packet_sizes'].append(packet.packet_size)
-        
-        # 转换为普通字典并排序
-        stats['protocols'] = dict(sorted(stats['protocols'].items(), key=lambda x: x[1], reverse=True))
-        stats['top_sources'] = dict(sorted(stats['top_sources'].items(), key=lambda x: x[1], reverse=True)[:10])
-        stats['top_destinations'] = dict(sorted(stats['top_destinations'].items(), key=lambda x: x[1], reverse=True)[:10])
+            # dt_object = datetime.fromtimestamp(float(packet.timestamp))
+            # print(f"Packet Time: {dt_object}, Info: {packet.timestamp}")
         
         if stats['packet_sizes']:
             stats['avg_packet_size'] = sum(stats['packet_sizes']) / len(stats['packet_sizes'])
             stats['min_packet_size'] = min(stats['packet_sizes'])
             stats['max_packet_size'] = max(stats['packet_sizes'])
         
-        # 添加攻击统计信息
-        stats['attack_summary'] = self.attack_summary.copy()
         
         return stats
-
-
-class PortScanDetector:
-    """端口扫描检测器"""
-    
-    def __init__(self, threshold: int = 10, time_window: int = 60):
-        self.threshold = threshold
-        self.time_window = time_window
-        self.scan_attempts = defaultdict(lambda: defaultdict(set))
-    
-    def check_packet(self, packet: PacketInfo, packet_history: deque) -> Optional[Dict[str, Any]]:
-        """检查数据包是否为端口扫描"""
-        if packet.protocol not in ['TCP', 'UDP']:
-            return None
-        
-        current_time = time.time()
-        src_ip = packet.src_ip
-        
-        # 记录扫描尝试
-        dst_ip = packet.dst_ip
-        self.scan_attempts[src_ip][dst_ip].add(packet.dst_port)
-        
-        # 检查是否超过阈值
-        for dst_ip, ports in self.scan_attempts[src_ip].items():
-            if len(ports) >= self.threshold:
-                return {
-                    'attack_type': 'PORT_SCAN',
-                    'source_ip': src_ip,
-                    'dest_ip': dst_ip,
-                    'packet_count': len(ports),
-                    'scanned_ports': list(ports),
-                    'threshold': self.threshold
-                }
-        
-        return None
-
-
-class AddressScanDetector:
-    """地址扫描检测器"""
-    
-    def __init__(self, threshold: int = 50, time_window: int = 60):
-        self.threshold = threshold
-        self.time_window = time_window
-        self.scan_attempts = defaultdict(set)
-    
-    def check_packet(self, packet: PacketInfo, packet_history: deque) -> Optional[Dict[str, Any]]:
-        """检查数据包是否为地址扫描"""
-        if packet.protocol not in ['TCP', 'UDP', 'ICMP']:
-            return None
-        
-        src_ip = packet.src_ip
-        dst_ip = packet.dst_ip
-        
-        # 记录扫描尝试
-        self.scan_attempts[src_ip].add(dst_ip)
-        
-        # 检查是否超过阈值
-        if len(self.scan_attempts[src_ip]) >= self.threshold:
-            return {
-                'attack_type': 'ADDRESS_SCAN',
-                'source_ip': src_ip,
-                'packet_count': len(self.scan_attempts[src_ip]),
-                'scanned_addresses': list(self.scan_attempts[src_ip]),
-                'threshold': self.threshold
-            }
-        
-        return None
-
-
-class FloodDetector:
-    """泛洪攻击检测器"""
-    
-    def __init__(self, threshold: int = 100, time_window: int = 10):
-        self.threshold = threshold
-        self.time_window = time_window
-        self.packet_counts = defaultdict(lambda: defaultdict(int))
-    
-    def check_packet(self, packet: PacketInfo, packet_history: deque) -> Optional[Dict[str, Any]]:
-        """检查数据包是否为泛洪攻击"""
-        current_time = time.time()
-        src_ip = packet.src_ip
-        dst_ip = packet.dst_ip
-        
-        # 清理过期计数
-        # 这里简化处理，实际应该基于时间窗口清理
-        
-        # 增加计数
-        self.packet_counts[src_ip][dst_ip] += 1
-        
-        # 检查是否超过阈值
-        if self.packet_counts[src_ip][dst_ip] >= self.threshold:
-            return {
-                'attack_type': 'FLOODING',
-                'source_ip': src_ip,
-                'dest_ip': dst_ip,
-                'packet_count': self.packet_counts[src_ip][dst_ip],
-                'threshold': self.threshold,
-                'protocol': packet.protocol
-            }
-        
-        return None
-
 
 class PCAPAnalyzer:
     """PCAP 分析器主类"""
@@ -388,38 +235,36 @@ class PCAPAnalyzer:
         
         packets = []
         
-        # 优先使用 scapy，然后是 pcapkit，最后是 pcapy
-        if SCAPY_AVAILABLE:
-            # 使用 scapy 读取文件
-            try:
-                scapy_packets = rdpcap(file_path)
-                total_packets = len(scapy_packets)
-                
-                if not self.silent_mode:
-                    self.logger.info(f"使用 scapy 读取到 {total_packets} 个数据包")
-                
-                # 显示进度条（仅在静默模式下或大文件时显示）
-                if TQDM_AVAILABLE and (self.silent_mode or total_packets > 1000):
-                    progress_bar = tqdm(scapy_packets, desc="分析数据包", unit="包", 
-                                      disable=self.silent_mode and total_packets < 1000)
-                    iterator = progress_bar
-                else:
-                    iterator = scapy_packets
-                
-                for packet in iterator:
-                    packet_info = self.parse_packet_scapy(packet)
-                    if packet_info:
-                        packets.append(packet_info)
-                        self.traffic_analyzer.add_packet(packet_info, is_file_analysis=True)
-                
-                if not self.silent_mode:
-                    self.logger.info(f"使用 scapy 分析完成，共处理 {len(packets)} 个有效数据包")
-                return packets
-                        
-            except Exception as e:
-                self.logger.error(f"使用 scapy 读取文件失败: {e}")
+        
+        # 使用 scapy 读取文件
+        try:
+            scapy_packets = rdpcap(file_path)
+            total_packets = len(scapy_packets)
+            
+            if not self.silent_mode:
+                self.logger.info(f"使用 scapy 读取到 {total_packets} 个数据包")
+            
+            # 显示进度条（仅在静默模式下或大文件时显示）
+            if TQDM_AVAILABLE and (self.silent_mode or total_packets > 1000):
+                progress_bar = tqdm(scapy_packets, desc="分析数据包", unit="包", 
+                                    disable=self.silent_mode and total_packets < 1000)
+                iterator = progress_bar
+            else:
+                iterator = scapy_packets
+            
+            for packet in iterator:
+                packet_info = self.parse_packet_scapy(packet)
+                if packet_info:
+                    packets.append(packet_info)
+                    self.traffic_analyzer.add_packet(packet_info, is_file_analysis=True)
+            
+            if not self.silent_mode:
+                self.logger.info(f"分析完成，共处理 {len(packets)} 个有效数据包")
+            return packets
+                    
+        except Exception as e:
+            self.logger.error(f"读取文件失败: {e}")
 
-        self.logger.error("没有可用的PCAP库来读取文件")
         return packets
     
     def get_analysis_results(self) -> Dict[str, Any]:

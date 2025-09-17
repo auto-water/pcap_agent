@@ -7,7 +7,6 @@ from collections import Counter
 import random
 import sys
 import time
-import signal
 import argparse
 from typing import Dict, List, Any, Optional
 
@@ -17,13 +16,11 @@ pcap_agent_path = os.path.join(current_dir, 'agent')
 sys.path.insert(0, pcap_agent_path)
 
 # 直接从main模块导入
-from main import NetSecAnalyzer, print_banner
+from main import NetSecAnalyzer
 
-try:
-    from scapy.all import rdpcap, IP, TCP, UDP, ICMP, ARP
-    SCAPY_AVAILABLE = True
-except ImportError:
-    SCAPY_AVAILABLE = False
+
+from scapy.all import rdpcap, IP, TCP, UDP, ICMP, ARP
+
 
 
 
@@ -75,43 +72,30 @@ def index(request):
             log_level = 'WARNING'
             
             # 初始化分析器
-            analyzer = NetSecAnalyzer('./pcap_agent/config.yaml', silent_mode=silent_mode)
+            # analyzer = NetSecAnalyzer("./traffic/agent/config.yaml", silent_mode=silent_mode)
+            
+            # debug专用
+            analyzer = NetSecAnalyzer("D:/llk_labs/proj/combine/pcap/traffic/agent/config.yaml", silent_mode=silent_mode)
+            
             analyzer.logger.setLevel(log_level)
             
-            # try:
             result = {}
-            
-            # 文件分析模式
+            # 流量包分析
             analyzer._init_fluidai_client()
             result = analyzer.analyze_pcap_file(
                 file_path=temp_file_path,
             )
             # 打印结果摘要
             if result:
-                analyzer.print_analysis_summary(result)
                 log_content = analyzer.generate_analysis_summary(result)
             
             print("\n分析完成！")
             
-            # except KeyboardInterrupt:
-            #     print("\n用户中断操作")
-            #     analyzer.stop()
-            # except Exception as e:
-            #     print(f"\n发生错误: {e}")
-            #     analyzer.logger.error(f"程序异常: {e}", exc_info=True)
-            #     sys.exit(1)
-
-            # ======================================================
-            
-            # if analysis_result is None:
-            #     # messages.error(request, f'文件分析失败: {log_content}')
-            #     return render(request, 'traffic/upload.html')
             
             # 生成分析结果文件名：包文件名(不含扩展名)+时间随机数.txt
             original_name = os.path.splitext(uploaded_file.name)[0]  # 去掉扩展名
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            random_num = random.randint(1000, 9999)
-            analysis_filename = f"{original_name}_{timestamp}_{random_num}.txt"
+            analysis_filename = f"{original_name}_流量分析报告{timestamp}.txt"
             
             # 保存分析结果到数据库
             file_record = UploadedFile.objects.create(
