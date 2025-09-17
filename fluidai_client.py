@@ -95,26 +95,25 @@ class FluidAIClient:
         messages = [
             {
                 "role": "system",
-                "content": """You are a professional cybersecurity analysis expert, skilled at identifying various network attack patterns.
-                    Please carefully analyze the provided network traffic data and identify potential cybersecurity threats.
+                "content": """You are a professional cybersecurity forensics expert with deep knowledge of network protocols. Your task is to analyze the provided network traffic data and identify potential cybersecurity threats by distinguishing real attacks from normal network activities. Focus on patterns and quantitative indicators.
+                    You need to precisely identify the following types of attacks based on concrete evidence:
+                    1.  Port Scanning: Identify sequential or rapid attempts to connect to multiple ports on a single host from a single source. Exclude normal service discovery or single connection failures.
+                    2.  Address Scanning: Identify attempts to connect to a specific port across a range of IP addresses within a short time frame.
+                    3.  Flooding Attacks (General): Look for an abnormally high volume of traffic from one or a few sources targeting a specific host or port, exceeding normal thresholds.
+                    4.  SYN Flood: A large number of SYN packets are sent to a target from various or spoofed source addresses, often without a corresponding SYN-ACK response, leading to resource exhaustion. Pay close attention to a high ratio of SYN packets to SYN-ACK packets.
+                    5.  UDP Flood: A massive volume of UDP packets is sent to a target's open or closed ports. Look for a high packet rate and an unusual ratio of request to response traffic.
+                    6.  ICMP Flood: An excessive volume of ICMP echo requests (ping) or other ICMP messages are sent to overwhelm the target's bandwidth.
+                    7.  Anomalous Traffic Patterns: Look for deviations from baseline network behavior, such as sudden spikes in traffic volume, unusual port usage, or data transfers at odd hours, when specific attack signatures are not met.
+                    8.  Other Suspicious Activities: Use this category for events that exhibit malicious intent but do not fit the above categories. Provide a low confidence score if the evidence is not conclusive.
 
-                    You need to identify the following types of attacks:
-                    1. Port Scanning
-                    2. Address Scanning
-                    3. Flooding Attacks
-                    4. SYN Flood
-                    5. UDP Flood
-                    6. ICMP Flood
-                    7. Anomalous Traffic Patterns
-                    8. Other Suspicious Activities
-
-                    Please return the analysis results in JSON format, strictly ensuring the correctness of the JSON syntax. The JSON should include:
-                    - attack_type: The type of attack
-                    - confidence: The confidence level (0-100)
-                    - description: A description of the attack
-                    - evidence: An explanation of the evidence
-                    - recommendations: Recommended defenses
-                    - severity: The severity level (LOW/MEDIUM/HIGH/CRITICAL)
+                    Provide the analysis results in JSON format. The JSON must strictly adhere to the following structure:
+                    - attack_type: The specific attack type identified. If uncertain, use "Other Suspicious Activities".
+                    - confidence: A confidence score (0-100), where scores below 50 indicate low confidence due to limited or ambiguous evidence.
+                    - description: A concise explanation of the observed activity.
+                    - evidence: A detailed, quantitative explanation of the evidence, including specific metrics (e.g., packet counts, packet rates per second, number of unique sources/destinations) that support the conclusion.
+                    - recommendations: Specific, actionable recommendations for mitigation.
+                    - severity: The severity level (LOW/MEDIUM/HIGH/CRITICAL) based on the potential impact.
+                    Ensure the JSON syntax is perfectly correct.
                 """
             },
             {
@@ -146,45 +145,45 @@ class FluidAIClient:
             格式化的提示词
         """
         prompt = f"""
-            请分析以下网络流量数据,识别潜在的安全威胁:
+        Please analyze the following network traffic data to identify potential security threats:
 
-            ## 流量统计信息
-            - 总数据包数: {traffic_data.get('total_packets', 0)}
-            - 分析时间窗口: {traffic_data.get('time_window', 60)} 秒
-            - 分析时间: {traffic_data.get('timestamp', datetime.now().isoformat())}
+        ## Traffic Statistics
+        - Total Packets: {traffic_data.get('total_packets', 0)}
+        - Analysis Time Window: {traffic_data.get('time_window', 60)} seconds
+        - Analysis Timestamp: {traffic_data.get('timestamp', datetime.now().isoformat())}
 
-            ## 协议分布
-            """
+        ## Protocol Distribution
+        """
         
         protocols = traffic_data.get('protocols', {})
         for protocol, count in protocols.items():
-            prompt += f"- {protocol}: {count} 个数据包\n"
+            prompt += f"- {protocol}: {count} packets\n"
         
-        prompt += "\n## 主要源IP地址\n"
+        prompt += "\n## Top Source IP Addresses\n"
         sources = traffic_data.get('top_sources', {})
         for ip, count in list(sources.items())[:5]:
-            prompt += f"- {ip}: {count} 个数据包\n"
+            prompt += f"- {ip}: {count} packets\n"
         
-        prompt += "\n## 主要目标IP地址\n"
+        prompt += "\n## Top Destination IP Addresses\n"
         destinations = traffic_data.get('top_destinations', {})
         for ip, count in list(destinations.items())[:5]:
-            prompt += f"- {ip}: {count} 个数据包\n"
+            prompt += f"- {ip}: {count} packets\n"
         
         if 'avg_packet_size' in traffic_data:
-            prompt += f"\n## 数据包大小统计\n"
-            prompt += f"- 平均大小: {traffic_data['avg_packet_size']:.2f} 字节\n"
-            prompt += f"- 最小大小: {traffic_data['min_packet_size']} 字节\n"
-            prompt += f"- 最大大小: {traffic_data['max_packet_size']} 字节\n"
+            prompt += f"\n## Packet Size Statistics\n"
+            prompt += f"- Average Size: {traffic_data['avg_packet_size']:.2f} bytes\n"
+            prompt += f"- Minimum Size: {traffic_data['min_packet_size']} bytes\n"
+            prompt += f"- Maximum Size: {traffic_data['max_packet_size']} bytes\n"
         
-        # 添加异常检测提示
-        prompt += "\n## 异常检测提示\n"
-        prompt += "请特别关注以下异常模式:\n"
-        prompt += "1. 单一IP对多个端口的大量连接尝试（端口扫描）\n"
-        prompt += "2. 单一IP对多个目标IP的连接尝试（地址扫描）\n"
-        prompt += "3. 短时间内大量相同类型的数据包（泛洪攻击）\n"
-        prompt += "4. 异常的数据包大小或协议分布\n"
-        prompt += "5. 非标准端口的大量流量\n"
-        
+        # Add anomaly detection hints
+        prompt += "\n## Anomaly Detection Hints\n"
+        prompt += "Please pay special attention to the following anomalous patterns:\n"
+        prompt += "1. High volume of connection attempts from a single IP to multiple ports (Port Scan)\n"
+        prompt += "2. Connection attempts from a single IP to multiple target IPs (Address Scan)\n"
+        prompt += "3. High volume of packets of the same type within a short period (Flooding Attack)\n"
+        prompt += "4. Unusual packet sizes or protocol distribution\n"
+        prompt += "5. High volume of traffic on non-standard ports\n"
+    
         return prompt
     
     def _process_analysis_result(self, analysis_result: Dict[str, Any], traffic_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -280,23 +279,31 @@ class FluidAIClient:
         messages = [
             {
                 "role": "system",
-                "content": """你是一个专业的网络安全分析专家,专门分析数据包级别的攻击模式。
-                请分析提供的数据包序列,识别可能的攻击行为。
-                
-                重点关注以下攻击模式:
-                1. 端口扫描:短时间内对多个端口进行连接尝试
-                2. 地址扫描:短时间内对多个IP地址进行连接尝试
-                3. SYN泛洪:大量SYN包,无对应ACK包
-                4. UDP泛洪:大量UDP包到同一目标
-                5. ICMP泛洪:大量ICMP包
-                6. 异常连接模式:非正常的连接序列
-                
-                请返回JSON格式的分析结果数组,每个攻击模式包含:
-                - pattern_type: 攻击模式类型
-                - confidence: 置信度
-                - affected_ips: 受影响的IP地址
-                - description: 详细描述
-                - recommendations: 防护建议
+                "content": """You are a highly specialized cybersecurity analyst with expertise in identifying legacy and low-level DDoS attacks. Your task is to analyze network packet information to detect the presence of specific, "poisonous" DDoS attacks that exploit vulnerabilities in network protocols.
+                    # Target Attack Types
+                    Focus your analysis on the following types of attacks:
+                    * Teardrop Attack: Identify fragmented IP packets that contain overlapping, oversized, or improperly sequenced fragment offsets, causing the target system to crash or malfunction during reassembly.
+                    * Ping of Death: Detect oversized ICMP echo request packets that exceed the maximum permissible size of an IP packet (65,535 bytes), leading to system crashes or buffer overflows upon reassembly.
+                    * Other low-level DDoS attacks: Look for traffic patterns that indicate other forms of protocol-level abuse, such as malformed packets or unusual flag combinations designed to crash a system rather than simply flood it.
+
+                    # Analysis Requirements
+
+                    You will receive network packet data in a JSON or structured format. Your analysis must be based on the provided data and should consider packet size, fragmentation flags, offset values, protocol types, and source/destination information.
+
+                    # Response Format
+
+                    Your output must be a JSON object, strictly following this schema. If no such attacks are found, return an empty list or a list with a single entry indicating no threats detected.
+                    {
+                    "attack_patterns": [
+                        {
+                        "pattern_type": "The name of the detected attack (e.g., 'Teardrop Attack', 'Ping of Death')",
+                        "severity": "Severity of the attack (LOW, MEDIUM, HIGH, CRITICAL)",
+                        "confidence": "A confidence score (0-100) indicating the certainty of the detection",
+                        "description": "A brief, clear description of the detected attack and its potential impact",
+                        "evidence": "Specific packet details or metrics that serve as evidence (e.g., 'Packet with size 65540 bytes', 'Overlapping IP fragment offsets found')",
+                        }
+                    ]
+                    }
                 """
             },
             {
