@@ -3,12 +3,13 @@ fluidai:
   api_key: "sk-dmeemizrhgzssbhgyhaadzftcqenudgagihfjkpsyhsjvqmz"
   model: "tencent/Hunyuan-MT-7B"
   timeout: 30
+  time_window: 60
 
 
 analysis:
   enable_realtime: true          
-  packet_limit: 10000           
-  time_window: 60              
+  packet_limit: 20000           
+  time_window: 60
   enable_ai_analysis: true
   
 

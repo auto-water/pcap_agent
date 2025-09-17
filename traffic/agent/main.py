@@ -44,6 +44,7 @@ class NetSecAnalyzer:
         # 初始化组件
         self.pcap_analyzer = PCAPAnalyzer(self.config.get('analysis', {}), silent_mode=silent_mode)
         self.fluidai_client = None
+        self.time_window = self.config.get('analysis', {}).get('time_window', 5)
         
         
         self.is_running = False
@@ -110,7 +111,7 @@ class NetSecAnalyzer:
             return {}
         
         # 分析PCAP文件
-        packets = self.pcap_analyzer.analyze_pcap_file(file_path)
+        packets, slices = self.pcap_analyzer.analyze_pcap_file(file_path)
         
         if not packets:
             self.logger.warning("未解析到有效数据包")
@@ -125,13 +126,14 @@ class NetSecAnalyzer:
             'packets_analyzed': len(packets),
             'statistics': stats.get('statistics', {}),
             'ai_analysis': None,
-            'attack_patterns': []
+            'attack_patterns': [],
+            'slices': slices
         }
         
         # AI分析
         try:
             # 分析流量统计
-            ai_result = self.fluidai_client.analyze_network_traffic(stats.get('statistics', {}))
+            ai_result = self.fluidai_client.analyze_network_traffic(slices)
             result['ai_analysis'] = ai_result
             
             # 分析数据包模式
@@ -180,7 +182,7 @@ class NetSecAnalyzer:
         # 流量统计
         stats = result.get('statistics', {})
         if stats:
-            summary.append("\n流量统计:")
+            summary.append("\n总体流量统计:")
             summary.append(f"  总数据包数: {stats.get('total_packets', 0)}")
             
             protocols = stats.get('protocols', {})
@@ -191,22 +193,48 @@ class NetSecAnalyzer:
             
             if 'avg_packet_size' in stats:
                 summary.append(f"  平均数据包大小: {stats['avg_packet_size']:.2f} 字节")
-        
+        slices = result.get('slices', [])
+        if slices:
+            summary.append(f"\n窗口流量统计:(窗口长度{self.time_window}s)")
+            for i, slice_data in enumerate(slices):
+                # 构建每个时间切片的详细信息
+                summary.append(f"\n--- 时间段 {i+1} ---")
+                summary.append(f"  TCP 数据包: {slice_data['tcp_count']} 个")
+                summary.append(f"  UDP 数据包: {slice_data['udp_count']} 个")
+                
+                # 如果存在TCP Flags统计，则添加
+                if any(slice_data['tcp_flags'].values()):
+                    flags_str = ', '.join([f"{flag.upper()}:{count}" for flag, count in slice_data['tcp_flags'].items() if count > 0])
+                    summary.append(f"  TCP 标志统计: {flags_str}")
+                    
+                # 统计端口信息
+                tcp_ports_str = ', '.join(map(str, slice_data['tcp_ports'])) if slice_data['tcp_ports'] else '无'
+                udp_ports_str = ', '.join(map(str, slice_data['udp_ports'])) if slice_data['udp_ports'] else '无'
+                summary.append(f"  TCP 端口: [{tcp_ports_str}]")
+                summary.append(f"  UDP 端口: [{udp_ports_str}]")
+                summary.append(f"  不同端口号总数: {len(slice_data['tcp_ports']) + len(slice_data['udp_ports'])}")
+
         # AI分析结果
         ai_analysis = result.get('ai_analysis', {})
-        analysis_list = ai_analysis.get('attacks', {}).get('attacks', [])
-        summary.append("\n风暴型DoS检测结果:")
-        for attack in analysis_list:
-            summary.append(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
-            summary.append(f"  置信度: {attack.get('confidence', 0)}%")
-            summary.append(f"  严重程度: {attack.get('severity', 'N/A')}")
-            summary.append(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
-            summary.append(f"  建议: {attack.get('recommendations', [])}")
-        
+        analysis_list = ai_analysis.get('attacks', [])
+        summary.append("\n流量特征分析结果:")
+        if isinstance(analysis_list, list):
+            for attack in analysis_list:
+                summary.append(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
+                summary.append(f"  置信度: {attack.get('confidence', 0)}%")
+                summary.append(f"  严重程度: {attack.get('severity', 'N/A')}")
+                summary.append(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
+                summary.append(f"  建议: {attack.get('recommendations', [])}")
+        else:
+            summary.append(f"  攻击类型: {analysis_list['attack_type']}")
+            summary.append(f"  置信度: {analysis_list['confidence']}%")
+            summary.append(f"  严重程度: {analysis_list['severity']}")
+            summary.append(f"  描述: {analysis_list['description']}")
+            summary.append(f"  建议: {analysis_list['recommendations']}")
         # 攻击模式
         attack_patterns = result.get('attack_patterns', [])
         if attack_patterns:
-            summary.append("\n剧毒型DoS检测结果:")
+            summary.append("\n包特征分析结果:")
             patterns = attack_patterns[0].get('attack_patterns', [])
             for pattern in patterns:  
                 # summary.append(f"  - {pattern.get('pattern_type', 'N/A')}: {pattern.get('description', 'N/A')}")
@@ -220,6 +248,20 @@ class NetSecAnalyzer:
         
         # 将列表拼接为字符串
         return "\n".join(summary)
-
+    
 if __name__ == "__main__":
-    main()
+    log_level = 'WARNING'
+    analyzer = NetSecAnalyzer("D:/llk_labs/proj/combine/pcap/traffic/agent/config.yaml", silent_mode=True)
+    analyzer.logger.setLevel(log_level)
+    
+    result = {}
+    # 流量包分析
+    analyzer._init_fluidai_client()
+    result = analyzer.analyze_pcap_file(
+        file_path= r'D:/llk_labs/proj/combine/pcap/traffic/agent/simple3.pcapng',
+    )
+    # 打印结果摘要
+    if result:
+        log_content = analyzer.generate_analysis_summary(result)
+        print(log_content)
+    print("\n分析完成！")

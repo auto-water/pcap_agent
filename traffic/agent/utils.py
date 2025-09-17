@@ -281,7 +281,7 @@ def load_config(config_file: str = None) -> Dict[str, Any]:
             'analysis': {
                 'enable_realtime': True,
                 'packet_limit': 10000,
-                'time_window': 60,
+                'time_window': 5,
                 'enable_ai_analysis': True
             },
             'logging': {
@@ -303,7 +303,7 @@ def load_config(config_file: str = None) -> Dict[str, Any]:
             'analysis': {
                 'enable_realtime': True,
                 'packet_limit': 10000,
-                'time_window': 60,
+                'time_window': 5,
                 'enable_ai_analysis': True
             },
             'logging': {

@@ -21,10 +21,6 @@ from main import NetSecAnalyzer
 
 from scapy.all import rdpcap, IP, TCP, UDP, ICMP, ARP
 
-
-
-
-
 def process_file_content(content, filename):
     # 对于pcap文件，这个函数不会被调用，因为pcap是二进制文件
     return content

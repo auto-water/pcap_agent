@@ -18,7 +18,7 @@ from utils import setup_logger, fix_and_parse_json
 class FluidAIClient:
     """硅基流动大模型客户端"""
     
-    def __init__(self, api_key: str, api_url: str = None, model: str = "fluidai-pro", timeout: int = 30):
+    def __init__(self, api_key: str, api_url: str = None, model: str = "fluidai-pro", timeout: int = 30, time_window: int = 5):
         """
         初始化 FluidAI 客户端
         
@@ -33,6 +33,7 @@ class FluidAIClient:
         self.model = model
         self.timeout = timeout
         self.logger = setup_logger('FluidAIClient')
+        self.time_window = time_window
         
         # 请求头
         self.headers = {
@@ -131,56 +132,39 @@ class FluidAIClient:
             
         return self._process_analysis_result(analysis_result, traffic_data)
     
-    def _build_analysis_prompt(self, traffic_data: Dict[str, Any]) -> str:
+    def _build_analysis_prompt(self, traffic_data: List[Dict[str, Any]]) -> str:
         """
-        构建分析提示词
-        
+        构建分析提示词。
+
         Args:
-            traffic_data: 流量数据
-            
+            traffic_data: 流量数据，预期为包含SliceInfo.to_dict()结果的列表。
+
         Returns:
-            格式化的提示词
+            格式化的提示词。
         """
-        prompt = f"""
-        Please analyze the following network traffic data to identify potential security threats:
+        if not traffic_data:
+            return "无法分析，流量数据为空。"
 
-        ## Traffic Statistics
-        - Total Packets: {traffic_data.get('total_packets', 0)}
-        - Analysis Time Window: {traffic_data.get('time_window', 60)} seconds
-        - Analysis Timestamp: {traffic_data.get('timestamp', datetime.now().isoformat())}
+        prompt = "以下是网络流量在不同时间片内的分析概览：\n\n"
+        
+        for slice_data in traffic_data:
+            # 构建每个时间片的详细信息
+            slice_prompt = (
+                f"--- 时间片: {slice_data['time_slot']/self.time_window}  ---\n"
+                f"  TCP 数据包总数: {slice_data['tcp_count']}\n"
+                f"  UDP 数据包总数: {slice_data['udp_count']}\n"
+                f"  TCP Flags 统计: SYN={slice_data['tcp_flags']['syn']}, ACK={slice_data['tcp_flags']['ack']}, RST={slice_data['tcp_flags']['rst']}\n"
+            )
+            prompt += slice_prompt + "\n"
+            if len(slice_data['tcp_ports'])<=100 : 
+                prompt += f"  TCP 端口: {slice_data['tcp_ports']}\n"
+            if len(slice_data['udp_ports'])<=100 : 
+                prompt += f"  UDP 端口: {slice_data['udp_ports']}\n"
 
-        ## Protocol Distribution
-        """
+            prompt += f"本时间片包含对{len(slice_data['tcp_ports'])+len(slice_data['udp_ports'])}个不同端口的访问。\n"
+            
+        prompt += "根据以上数据，请进行深入分析，例如：流量模式、异常行为、常见协议等。"
         
-        protocols = traffic_data.get('protocols', {})
-        for protocol, count in protocols.items():
-            prompt += f"- {protocol}: {count} packets\n"
-        
-        prompt += "\n## Top Source IP Addresses\n"
-        sources = traffic_data.get('top_sources', {})
-        for ip, count in list(sources.items())[:5]:
-            prompt += f"- {ip}: {count} packets\n"
-        
-        prompt += "\n## Top Destination IP Addresses\n"
-        destinations = traffic_data.get('top_destinations', {})
-        for ip, count in list(destinations.items())[:5]:
-            prompt += f"- {ip}: {count} packets\n"
-        
-        if 'avg_packet_size' in traffic_data:
-            prompt += f"\n## Packet Size Statistics\n"
-            prompt += f"- Average Size: {traffic_data['avg_packet_size']:.2f} bytes\n"
-            prompt += f"- Minimum Size: {traffic_data['min_packet_size']} bytes\n"
-            prompt += f"- Maximum Size: {traffic_data['max_packet_size']} bytes\n"
-        
-        # Add anomaly detection hints
-        prompt += "\n## Anomaly Detection Hints\n"
-        prompt += "Please pay special attention to the following anomalous patterns:\n"
-        prompt += "1. High volume of connection attempts from a single IP to multiple ports (Port Scan)\n"
-        prompt += "2. Connection attempts from a single IP to multiple target IPs (Address Scan)\n"
-        prompt += "3. High volume of packets of the same type within a short period (Flooding Attack)\n"
-        prompt += "4. Unusual packet sizes or protocol distribution\n"
-        prompt += "5. High volume of traffic on non-standard ports\n"
-    
         return prompt
     
     def _process_analysis_result(self, analysis_result: Dict[str, Any], traffic_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -198,11 +182,6 @@ class FluidAIClient:
             'timestamp': datetime.now().isoformat(),
             'analysis_type': 'AI_ANALYSIS',
             'model_used': self.model,
-            'traffic_summary': {
-                'total_packets': traffic_data.get('total_packets', 0),
-                'time_window': traffic_data.get('time_window', 60),
-                'protocols': traffic_data.get('protocols', {})
-            }
         }
         
         # 合并AI分析结果

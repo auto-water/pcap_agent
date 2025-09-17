@@ -1,1 +1,64 @@
 2025-09-17 15:31:27 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:06:57 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:06:57 - PCAPAnalyzer - INFO - 分析完成，共统计 1 个时间片，每个时间片长度为 5 秒
+2025-09-17 22:08:41 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:10:31 - PCAPAnalyzer - INFO - 分析完成，共统计 97 个时间片，每个时间片长度为 5 秒
+2025-09-17 22:10:34 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:36 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:39 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:41 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:43 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:46 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:48 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:50 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:52 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:55 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:57 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:10:59 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:01 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:04 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:06 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:08 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:10 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:13 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:15 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:18 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:19 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:22 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:24 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:25 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:27 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:11:29 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:14:09 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:15:09 - PCAPAnalyzer - INFO - 分析完成，共统计 97 个时间片，每个时间片长度为 5 秒
+2025-09-17 22:15:11 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:13 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:15 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:16 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:18 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:20 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:22 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:15:24 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (459748) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:20:54 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:21:54 - PCAPAnalyzer - INFO - 分析完成，共统计 97 个时间片，每个时间片长度为 5 秒
+2025-09-17 22:21:54 - NetSecAnalyzer - ERROR - AI分析失败: 'FluidAIClient' object has no attribute 'time_window'
+2025-09-17 22:25:42 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:26:42 - PCAPAnalyzer - INFO - 分析完成，共统计 9 个时间片，每个时间片长度为 60 秒
+2025-09-17 22:26:44 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:46 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:47 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:49 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:51 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:53 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:55 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:57 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:26:58 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:27:00 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:27:02 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:27:04 - FluidAIClient - ERROR - API请求失败: 400 - {"code":20015,"message":"number of input tokens (451094) has exceeded max_seq_len (32768) limit.","data":null}
+2025-09-17 22:37:53 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"message": "连接测试成功", "code": 0}]
+2025-09-17 22:38:53 - PCAPAnalyzer - INFO - 分析完成，共统计 9 个时间片，每个时间片长度为 60 秒
+2025-09-17 22:42:42 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"status": "成功", "message": "连接测试成功"}]
+2025-09-17 22:42:42 - PCAPAnalyzer - INFO - 分析完成，共统计 1 个时间片，每个时间片长度为 60 秒
+2025-09-17 22:45:04 - FluidAIClient - INFO - FluidAI API连接测试成功: [{"status": "成功", "message": "连接测试成功"}]
+2025-09-17 22:45:04 - PCAPAnalyzer - INFO - 分析完成，共统计 1 个时间片，每个时间片长度为 60 秒
