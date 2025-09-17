@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .upload-form { border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 30px; }
+        .file-list { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
+        .file-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .file-item:hover { background-color: #f5f5f5; }
+        .messages { margin: 20px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #005a8b; }
+        input[type="file"] { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TXT文件上传</h1>
+        
+        <!-- 消息显示 -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- 上传表单 -->
+        <div class="upload-form">
+            <h2>上传新文件</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div>
+                    <label for="txt_file">选择TXT文件:</label><br>
+                    <input type="file" name="txt_file" id="txt_file" accept=".txt" required>
+                </div>
+                <br>
+                <button type="submit">上传文件</button>
+            </form>
+        </div>
+        
+        <!-- 已上传文件列表 -->
+        <div class="file-list">
+            <h2>已上传的文件</h2>
+            {% if uploaded_files %}
+                {% for file in uploaded_files %}
+                    <div class="file-item" onclick="viewContent({{ file.id }})">
+                        <strong>{{ file.filename }}</strong> - {{ file.uploaded_at|date:"Y-m-d H:i:s" }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>暂无上传的文件</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 文件内容查看模态框 -->
+    <div id="contentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 5px; max-width: 80%; max-height: 80%; overflow: auto;">
+            <h3 id="modalTitle"></h3>
+            <pre id="modalContent" style="white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 3px;"></pre>
+            <button onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+    
+    <script>
+        function viewContent(fileId) {
+            fetch(`/traffic/view/${fileId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById('modalTitle').textContent = data.filename;
+                        document.getElementById('modalContent').textContent = data.content;
+                        document.getElementById('contentModal').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    alert('获取文件内容失败');
+                });
+        }
+        
+        function closeModal() {
+            document.getElementById('contentModal').style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        document.getElementById('contentModal').onclick = function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
