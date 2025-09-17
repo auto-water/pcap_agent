@@ -3,31 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文件详情 - {{ file_record.filename }}</title>
+    <title>{{ file_record.filename }} - 分析详情</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .file-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .content-box { border: 1px solid #ddd; padding: 20px; background: white; border-radius: 5px; }
-        .content { white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5; }
-        .back-btn { background: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-bottom: 20px; display: inline-block; margin-right: 10px; }
-        .back-btn:hover { background: #545b62; }
-        .delete-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px; margin-bottom: 20px; display: inline-block; }
-        .delete-btn:hover { background: #c82333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .btn { 
+            padding: 10px 20px; 
+            text-decoration: none; 
+            border-radius: 10px; 
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .back-btn { 
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+            color: white;
+        }
+        .back-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(113, 128, 150, 0.4);
+        }
+        .delete-btn { 
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+        .delete-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 101, 101, 0.4);
+        }
+        .file-info { 
+            background: linear-gradient(135deg, #e6fffa 0%, #f0fff4 100%);
+            border-left: 4px solid #48bb78;
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-bottom: 30px;
+        }
+        .file-info h2 { 
+            color: #2d3748; 
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .file-info p { 
+            color: #4a5568; 
+            font-size: 16px;
+        }
+        .content-box { 
+            background: #1a202c;
+            border-radius: 15px; 
+            padding: 30px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .content-box h3 { 
+            color: #e2e8f0; 
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .content { 
+            background: #2d3748;
+            color: #e2e8f0;
+            white-space: pre-wrap; 
+            font-family: 'Cascadia Code', 'Fira Code', monospace; 
+            font-size: 14px; 
+            line-height: 1.6;
+            padding: 25px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border: 1px solid #4a5568;
+        }
+        @media (max-width: 768px) {
+            .header { 
+                flex-direction: column; 
+                align-items: stretch; 
+            }
+            .btn { 
+                text-align: center; 
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="{% url 'file_list' %}" class="back-btn">返回文件列表</a>
-        <a href="{% url 'delete_file' file_record.id %}" class="delete-btn" onclick="return confirm('确定要删除文件 {{ file_record.filename }} 吗？此操作不可撤销！')">删除文件</a>
+        <div class="header">
+            <a href="{% url 'file_list' %}" class="btn back-btn">← 返回列表</a>
+            <a href="{% url 'delete_file' file_record.id %}" class="btn delete-btn" onclick="return confirm('确定要删除文件 {{ file_record.filename }} 吗？此操作不可撤销！')">🗑️ 删除文件</a>
+        </div>
         
         <div class="file-info">
-            <h2>{{ file_record.filename }}</h2>
-            <p><strong>上传时间:</strong> {{ file_record.uploaded_at|date:"Y-m-d H:i:s" }}</p>
+            <h2>📊 {{ file_record.filename }}</h2>
+            <p><strong>🕒 分析时间:</strong> {{ file_record.uploaded_at|date:"Y-m-d H:i:s" }}</p>
         </div>
         
         <div class="content-box">
-            <h3>文件内容:</h3>
+            <h3>📋 分析报告</h3>
             <div class="content">{{ file_record.content }}</div>
         </div>
     </div>

@@ -1,0 +1,55 @@
+fluidai:
+  api_url: "https://api.siliconflow.cn/v1/chat/completions"
+  api_key: "sk-dmeemizrhgzssbhgyhaadzftcqenudgagihfjkpsyhsjvqmz"
+  model: "tencent/Hunyuan-MT-7B"
+  timeout: 30
+
+
+analysis:
+  enable_realtime: true          
+  packet_limit: 10000           
+  time_window: 60              
+  enable_ai_analysis: true
+  
+
+  thresholds:
+    port_scan_threshold: 10
+    address_scan_threshold: 50
+    flood_threshold: 100
+    min_packet_size: 64
+    max_packet_size: 1500
+
+
+logging:
+  level: "INFO"
+  file_enabled: true
+  console_enabled: true
+  log_file: "netsec_analyzer.log"
+
+
+capture:
+  default_interface: null
+  buffer_size: 65536
+  promiscuous: true
+  timeout: 1000
+  
+
+  filters:
+    tcp_only: "tcp"
+    http_only: "tcp port 80"
+    dns_only: "udp port 53"
+    custom: ""
+
+
+output:
+  save_results: true
+  output_format: "json"
+  include_raw_packets: false
+  max_file_size: 100
+
+
+performance:
+  max_threads: 4
+  memory_limit: 512
+  enable_caching: true
+  cache_size: 1000
