@@ -5,10 +5,6 @@ NetSecAnalyzer - 网络抓包与分析模块
 使用 PyPCAP 库实现网络流量捕获、解析和分析功能
 """
 
-import time
-import struct
-import socket
-import threading
 from typing import Dict, List, Any, Optional, Tuple
 from collections import defaultdict, deque
 from datetime import datetime, timedelta

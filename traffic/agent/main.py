@@ -137,13 +137,14 @@ class NetSecAnalyzer:
             result['ai_analysis'] = ai_result
             
             # 分析数据包模式
-            packet_dicts = [p.to_dict() for p in packets[:100]]
-            attack_patterns = self.fluidai_client.detect_attack_patterns(packet_dicts)
+            packet_dicts = [p.to_dict() for p in packets]
+            # attack_patterns = self.fluidai_client.detect_attack_patterns(packet_dicts)
+            attack_patterns = self.fluidai_client.get_patterns(packet_dicts)
             result['attack_patterns'] = attack_patterns
             
-            self.logger.info("AI分析完成")
+            # self.logger.info("AI分析完成")
         except Exception as e:
-            self.logger.error(f"AI分析失败: {e}")
+            self.logger.error(f"分析失败: {e}")
             result['ai_analysis'] = {'error': str(e)}
         
         # 保存结果
@@ -188,7 +189,7 @@ class NetSecAnalyzer:
             protocols = stats.get('protocols', {})
             if protocols:
                 summary.append("  协议分布:")
-                for protocol, count in list(protocols.items())[:5]:
+                for protocol, count in list(protocols.items()):
                     summary.append(f"    {protocol}: {count} 个数据包")
             
             if 'avg_packet_size' in stats:
@@ -198,7 +199,7 @@ class NetSecAnalyzer:
             summary.append(f"\n窗口流量统计:(窗口长度{self.time_window}s)")
             for i, slice_data in enumerate(slices):
                 # 构建每个时间切片的详细信息
-                summary.append(f"\n--- 时间段 {i+1} ---")
+                summary.append(f"\n--- 时间段 {i+1}:{i*self.time_window}-{(i+1)*self.time_window}s ---")
                 summary.append(f"  TCP 数据包: {slice_data['tcp_count']} 个")
                 summary.append(f"  UDP 数据包: {slice_data['udp_count']} 个")
                 
@@ -208,41 +209,62 @@ class NetSecAnalyzer:
                     summary.append(f"  TCP 标志统计: {flags_str}")
                     
                 # 统计端口信息
-                tcp_ports_str = ', '.join(map(str, slice_data['tcp_ports'])) if slice_data['tcp_ports'] else '无'
-                udp_ports_str = ', '.join(map(str, slice_data['udp_ports'])) if slice_data['udp_ports'] else '无'
+                tcp_ports_str = ', '.join(map(str, list(slice_data['tcp_ports'])[:100])) if slice_data['tcp_ports'] else '无'
+                if len(slice_data['tcp_ports']) > 100:
+                    tcp_ports_str += '...'
                 summary.append(f"  TCP 端口: [{tcp_ports_str}]")
+                udp_ports_str = ', '.join(map(str, list(slice_data['udp_ports'])[:100])) if slice_data['udp_ports'] else '无'
+                if len(list(slice_data['udp_ports'])) > 100:
+                    udp_ports_str += '...'
                 summary.append(f"  UDP 端口: [{udp_ports_str}]")
+                summary.append(f"  TCP 端口总数: {len(slice_data['tcp_ports'])}")
+                summary.append(f"  UDP 端口总数: {len(slice_data['udp_ports'])}")
                 summary.append(f"  不同端口号总数: {len(slice_data['tcp_ports']) + len(slice_data['udp_ports'])}")
 
         # AI分析结果
         ai_analysis = result.get('ai_analysis', {})
         analysis_list = ai_analysis.get('attacks', [])
+        
+        summary.append("=" * 60)
+        
         summary.append("\n流量特征分析结果:")
+        flag = 0
         if isinstance(analysis_list, list):
             for attack in analysis_list:
-                summary.append(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
-                summary.append(f"  置信度: {attack.get('confidence', 0)}%")
-                summary.append(f"  严重程度: {attack.get('severity', 'N/A')}")
-                summary.append(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
-                summary.append(f"  建议: {attack.get('recommendations', [])}")
+                if analysis_list['confidence'] <= 70:
+                    continue
+                else:
+                    flag = 1
+                    summary.append(f"  攻击类型: {attack.get('attack_type', 'N/A')}")
+                    summary.append(f"  置信度: {attack.get('confidence', 0)}%")
+                    summary.append(f"  严重程度: {attack.get('severity', 'N/A')}")
+                    summary.append(f"  描述: {attack.get('description', attack.get('description：', 'N/A'))}")
+                    summary.append(f"  建议: {attack.get('recommendations', [])}")
         else:
-            summary.append(f"  攻击类型: {analysis_list['attack_type']}")
-            summary.append(f"  置信度: {analysis_list['confidence']}%")
-            summary.append(f"  严重程度: {analysis_list['severity']}")
-            summary.append(f"  描述: {analysis_list['description']}")
-            summary.append(f"  建议: {analysis_list['recommendations']}")
+            if analysis_list['confidence'] >= 70:
+                flag = 1
+                summary.append(f"  攻击类型: {analysis_list['attack_type']}")
+                summary.append(f"  置信度: {analysis_list['confidence']}%")
+                summary.append(f"  严重程度: {analysis_list['severity']}")
+                summary.append(f"  描述: {analysis_list['description']}")
+                summary.append(f"  建议: {analysis_list['recommendations']}")
+        if flag == 0:
+            summary.append("  未检测到明显攻击行为")
         # 攻击模式
-        attack_patterns = result.get('attack_patterns', [])
-        if attack_patterns:
+        patterns = result.get('attack_patterns', [])
+        if patterns:
             summary.append("\n包特征分析结果:")
-            patterns = attack_patterns[0].get('attack_patterns', [])
-            for pattern in patterns:  
-                # summary.append(f"  - {pattern.get('pattern_type', 'N/A')}: {pattern.get('description', 'N/A')}")
-                summary.append(f"  攻击类型: {pattern.get('pattern_type', 'N/A')}")
-                summary.append(f"  置信度: {pattern.get('confidence', 0)}%")
-                summary.append(f"  严重程度: {pattern.get('severity', 'N/A')}")
-                summary.append(f"  描述: {pattern.get('description', pattern.get('description：', 'N/A'))}")
-                summary.append(f"  依据: {pattern.get('evidence', [])}")
+            # 统计源IP和目的IP信息
+            src_ips_str = ', '.join(patterns.get('src_ip', []))
+            dst_ips_str = ', '.join(patterns.get('dst_ip', []))
+            summary.append(f"  源IP地址: [{src_ips_str}]")
+            summary.append(f"  目的IP地址: [{dst_ips_str}]")
+            
+            # 统计数据包大小分布
+            packet_size_dist = patterns.get('packet_size', {})
+            if packet_size_dist:
+                size_str = ', '.join([f"{size_range}:{count}" for size_range, count in packet_size_dist.items()])
+                summary.append(f"  数据包大小分布: {size_str}")
         # 添加结尾分隔符
         summary.append("=" * 60)
         
@@ -251,7 +273,7 @@ class NetSecAnalyzer:
     
 if __name__ == "__main__":
     log_level = 'WARNING'
-    analyzer = NetSecAnalyzer("D:/llk_labs/proj/combine/pcap/traffic/agent/config.yaml", silent_mode=True)
+    analyzer = NetSecAnalyzer("./config.yaml", silent_mode=True)
     analyzer.logger.setLevel(log_level)
     
     result = {}

@@ -307,35 +307,39 @@ class FluidAIClient:
         
         return []
     
-    def _build_packet_analysis_prompt(self, packets: List[Dict[str, Any]]) -> str:
+    def get_patterns(self, packets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        构建数据包分析提示词
+        提取包特征
         
         Args:
             packets: 数据包列表
             
         Returns:
-            格式化的提示词
+            检测到的攻击模式列表
         """
-        prompt = f"请分析以下 {len(packets)} 个数据包,识别攻击模式:\n\n"
+        src_ip = set()
+        dst_ip = set()
+        src_port = set()
+        dst_port = set()
+        packet_size = {'0-100':0, '100-500':0, '500-1000':0, '1000-1500':0, '1500+':0}
         
-        # 只显示前50个数据包,避免提示词过长
-        sample_packets = packets[:50]
-        
-        for i, packet in enumerate(sample_packets):
-            prompt += f"数据包 {i+1}:\n"
-            prompt += f"  时间: {packet.get('timestamp', 'N/A')}\n"
-            prompt += f"  协议: {packet.get('protocol', 'N/A')}\n"
-            prompt += f"  源: {packet.get('src_ip', 'N/A')}:{packet.get('src_port', 'N/A')}\n"
-            prompt += f"  目标: {packet.get('dst_ip', 'N/A')}:{packet.get('dst_port', 'N/A')}\n"
-            prompt += f"  大小: {packet.get('packet_size', 'N/A')} 字节\n\n"
-        
-        if len(packets) > 50:
-            prompt += f"... 还有 {len(packets) - 50} 个数据包\n\n"
-        
-        prompt += "请分析这些数据包序列,识别可能的攻击模式。"
-        
-        return prompt
+        for packet in packets:
+            src_ip.add(packet['src_ip'])
+            dst_ip.add(packet['dst_ip'])
+            src_port.add(packet['src_port'])
+            dst_port.add(packet['dst_port'])
+            packet_size['0-100' if packet['packet_size']<=100 else
+                        '100-500' if packet['packet_size']<=500 else
+                        '500-1000' if packet['packet_size']<=1000 else
+                        '1000-1500' if packet['packet_size']<=1500 else
+                        '1500+'] += 1
+        return {
+            'src_ip':sorted(list(src_ip)),
+            'dst_ip':sorted(list(dst_ip)),
+            'src_port':sorted(list(src_port)),
+            'dst_port':sorted(list(dst_port)),
+            'packet_size':packet_size
+        }
     
     def test_connection(self) -> bool:
         """

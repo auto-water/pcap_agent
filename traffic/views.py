@@ -71,7 +71,7 @@ def index(request):
             # analyzer = NetSecAnalyzer("./traffic/agent/config.yaml", silent_mode=silent_mode)
             
             # debug专用
-            analyzer = NetSecAnalyzer("D:/llk_labs/proj/combine/pcap/traffic/agent/config.yaml", silent_mode=silent_mode)
+            analyzer = NetSecAnalyzer("./config.yaml", silent_mode=silent_mode)
             
             analyzer.logger.setLevel(log_level)
             
